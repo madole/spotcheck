@@ -3,12 +3,14 @@ import type { Group } from "three";
 import type { GltfLoader } from "./gltfLoader.ts";
 import { hashBytes } from "./hash.ts";
 import { getModel, isQuotaError, putModel } from "./modelLibrary.ts";
+import { computeNormalization, type Normalization } from "./normalize.ts";
 
 export interface LoadedModel {
   id: string;
   name: string;
   byteLength: number;
   scene: Group;
+  normalization: Normalization;
   fromLibrary: boolean;
 }
 
@@ -71,6 +73,7 @@ export async function loadModelFile(file: File, loader: GltfLoader): Promise<Loa
     name: file.name,
     byteLength: buffer.byteLength,
     scene,
+    normalization: computeNormalization(scene),
     fromLibrary: cached !== undefined,
   };
 }

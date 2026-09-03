@@ -1,6 +1,7 @@
 import { useRef } from "react";
 
 import { useModelStore } from "../model/modelStore.ts";
+import { useViewerStore } from "../viewer/viewerStore.ts";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -15,6 +16,7 @@ export default function Toolbar() {
   const error = useModelStore((state) => state.error);
   const open = useModelStore((state) => state.open);
   const dismissError = useModelStore((state) => state.dismissError);
+  const requestFrameAll = useViewerStore((state) => state.requestFrameAll);
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -40,6 +42,10 @@ export default function Toolbar() {
         }}
         type="file"
       />
+
+      <button className="toolbar__action" type="button" onClick={requestFrameAll}>
+        Frame all
+      </button>
 
       <span className="toolbar__status">
         {loadingName

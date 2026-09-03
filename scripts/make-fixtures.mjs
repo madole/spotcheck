@@ -60,9 +60,33 @@ function exportGlb(scene) {
   });
 }
 
-const glb = await exportGlb(buildScene());
+/** Deep copy of the part scene, with every mesh scaled about the origin. */
+function buildScaledScene(factor) {
+  const scene = buildScene();
+
+  scene.traverse((object) => {
+    if (!object.isMesh) return;
+
+    object.geometry = object.geometry.clone();
+    object.geometry.scale(factor, factor, factor);
+    object.position.multiplyScalar(factor);
+  });
+
+  return scene;
+}
+
+const variants = [
+  ["part.glb", buildScene()],
+  ["part-tiny.glb", buildScaledScene(0.01)],
+  ["part-huge.glb", buildScaledScene(1000)],
+];
 
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, "part.glb"), glb);
 
-console.log(`wrote ${join(outDir, "part.glb")} (${glb.byteLength} bytes)`);
+for (const [name, scene] of variants) {
+  const glb = await exportGlb(scene);
+
+  writeFileSync(join(outDir, name), glb);
+
+  console.log(`wrote ${join(outDir, name)} (${glb.byteLength} bytes)`);
+}
