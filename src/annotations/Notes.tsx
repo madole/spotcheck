@@ -30,7 +30,7 @@ const UP_BIAS = 0.6;
 const FONT_SIZE = 0.025;
 /** Labels wrap onto further lines past this width, in world units. */
 const MAX_LABEL_WIDTH = 0.22;
-const MARKER_RADIUS = 0.012;
+const MARKER_RADIUS = 0.003;
 const PADDING = 0.45;
 
 const DRAFT_COLOR = "#fbbf24";
