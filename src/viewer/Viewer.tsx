@@ -4,6 +4,7 @@ import type { Group } from "three";
 
 import { useAnnotationStore } from "../annotations/annotationStore.ts";
 import { anchorFromIntersection } from "../annotations/coordinates.ts";
+import Notes from "../annotations/Notes.tsx";
 import type { LoadedModel } from "../model/loadModelFile.ts";
 import { applyNormalization } from "../model/normalize.ts";
 import { useModelStore } from "../model/modelStore.ts";
@@ -65,6 +66,8 @@ function ModelRoot({ model }: { model: LoadedModel }) {
 
   return (
     <group ref={group}>
+      <Notes />
+
       <primitive
         object={model.scene}
         onPointerDown={(event: ThreeEvent<PointerEvent>) => {
