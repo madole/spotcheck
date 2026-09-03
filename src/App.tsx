@@ -1,3 +1,4 @@
+import { Box } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { useModelStore } from "./model/modelStore.ts";
@@ -6,6 +7,15 @@ import DropZone from "./ui/DropZone.tsx";
 import NotePanel from "./ui/NotePanel.tsx";
 import Toolbar from "./ui/Toolbar.tsx";
 import Viewer from "./viewer/Viewer.tsx";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 function EmptyState() {
   const model = useModelStore((state) => state.model);
@@ -18,34 +28,40 @@ function EmptyState() {
   }
 
   return (
-    <div className="empty">
-      <div className="empty__card">
-        <h1 className="empty__title">Inspect a model</h1>
+    <div className="pointer-events-none absolute inset-0 grid place-items-center p-4">
+      <Empty className="pointer-events-auto w-auto max-w-sm border bg-card shadow-xl">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Box />
+          </EmptyMedia>
+          <EmptyTitle>Inspect a model</EmptyTitle>
+          <EmptyDescription>
+            Drop a .glb file anywhere, or open one to place inspection notes on it.
+          </EmptyDescription>
+        </EmptyHeader>
 
-        <p className="empty__hint">
-          Drop a .glb file anywhere, or open one to place inspection notes on it.
-        </p>
+        <EmptyContent>
+          <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+            Open model…
+          </Button>
 
-        <button className="toolbar__action" type="button" onClick={() => inputRef.current?.click()}>
-          Open model…
-        </button>
+          <input
+            ref={inputRef}
+            accept=".glb,model/gltf-binary"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.item(0);
 
-        <input
-          ref={inputRef}
-          accept=".glb,model/gltf-binary"
-          className="toolbar__file"
-          onChange={(event) => {
-            const file = event.target.files?.item(0);
+              if (file) {
+                void open(file);
+              }
 
-            if (file) {
-              void open(file);
-            }
-
-            event.target.value = "";
-          }}
-          type="file"
-        />
-      </div>
+              event.target.value = "";
+            }}
+            type="file"
+          />
+        </EmptyContent>
+      </Empty>
     </div>
   );
 }
@@ -59,10 +75,10 @@ export default function App() {
 
   return (
     <DropZone>
-      <div className="app">
+      <div className="dark flex h-full flex-col bg-background text-foreground">
         <Toolbar />
-        <main className="app__viewer">
-          <div className="app__canvas">
+        <main className="flex min-h-0 flex-1">
+          <div className="relative min-w-0 flex-1">
             <Viewer />
             <EmptyState />
           </div>

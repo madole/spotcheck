@@ -1,9 +1,12 @@
+import { Info, TriangleAlert } from "lucide-react";
 import { useRef } from "react";
 
 import { useAnnotationStore } from "../annotations/annotationStore.ts";
-import { useProjectStore } from "../project/projectStore.ts";
 import { useModelStore } from "../model/modelStore.ts";
+import { useProjectStore } from "../project/projectStore.ts";
 import { useViewerStore } from "../viewer/viewerStore.ts";
+import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -35,136 +38,155 @@ export default function Toolbar() {
   const modelInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <header className="toolbar">
-      <span className="toolbar__title">Spotcheck</span>
+    <header className="flex flex-col border-b border-border bg-card">
+      <div className="flex items-center gap-2 px-4 py-2">
+        <span className="text-sm font-semibold text-foreground">Spotcheck</span>
 
-      <button className="toolbar__action" type="button" onClick={() => inputRef.current?.click()}>
-        Open model…
-      </button>
+        <Button size="sm" type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+          Open model…
+        </Button>
 
-      <input
-        ref={inputRef}
-        accept=".glb,model/gltf-binary"
-        className="toolbar__file"
-        onChange={(event) => {
-          const file = event.target.files?.item(0);
+        <input
+          ref={inputRef}
+          accept=".glb,model/gltf-binary"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.item(0);
 
-          if (file) {
-            void open(file);
-          }
+            if (file) {
+              void open(file);
+            }
 
-          event.target.value = "";
-        }}
-        type="file"
-      />
+            event.target.value = "";
+          }}
+          type="file"
+        />
 
-      <button className="toolbar__action" type="button" onClick={requestFrameAll}>
-        Frame all
-      </button>
+        <Button size="sm" type="button" variant="outline" onClick={requestFrameAll}>
+          Frame all
+        </Button>
 
-      <button
-        className="toolbar__action"
-        disabled={!model}
-        onClick={saveProject}
-        title={savedAt ? `Last saved ${savedAt}` : undefined}
-        type="button"
-      >
-        Save notes
-      </button>
+        <Button
+          disabled={!model}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={saveProject}
+          title={savedAt ? `Last saved ${savedAt}` : undefined}
+        >
+          Save notes
+        </Button>
 
-      <button
-        className="toolbar__action"
-        disabled={!model}
-        onClick={exportScreenshot}
-        type="button"
-      >
-        Export PNG
-      </button>
+        <Button
+          disabled={!model}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={exportScreenshot}
+        >
+          Export PNG
+        </Button>
 
-      <button
-        className="toolbar__action"
-        type="button"
-        onClick={() => projectInputRef.current?.click()}
-      >
-        Open project…
-      </button>
+        <Button
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={() => projectInputRef.current?.click()}
+        >
+          Open project…
+        </Button>
 
-      <input
-        ref={projectInputRef}
-        accept=".json,application/json"
-        className="toolbar__file"
-        onChange={(event) => {
-          const file = event.target.files?.item(0);
+        <input
+          ref={projectInputRef}
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.item(0);
 
-          if (file) {
-            void openProject(file);
-          }
+            if (file) {
+              void openProject(file);
+            }
 
-          event.target.value = "";
-        }}
-        type="file"
-      />
+            event.target.value = "";
+          }}
+          type="file"
+        />
 
-      {pending && (
-        <>
-          <button
-            className="toolbar__action"
-            type="button"
-            onClick={() => modelInputRef.current?.click()}
-          >
-            Locate {pending.model.name}…
-          </button>
+        {pending && (
+          <>
+            <Button
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => modelInputRef.current?.click()}
+            >
+              Locate {pending.model.name}…
+            </Button>
 
-          <input
-            ref={modelInputRef}
-            accept=".glb,model/gltf-binary"
-            className="toolbar__file"
-            onChange={(event) => {
-              const file = event.target.files?.item(0);
+            <input
+              ref={modelInputRef}
+              accept=".glb,model/gltf-binary"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.item(0);
 
-              if (file) {
-                void locate(file);
-              }
+                if (file) {
+                  void locate(file);
+                }
 
-              event.target.value = "";
-            }}
-            type="file"
-          />
-        </>
-      )}
+                event.target.value = "";
+              }}
+              type="file"
+            />
+          </>
+        )}
 
-      <span className="toolbar__status">
-        {loadingName
-          ? `Loading ${loadingName}…`
-          : model
-            ? `${model.name} · ${formatBytes(model.byteLength)}${model.fromLibrary ? " · from library" : ""} · ${noteCount} note${noteCount === 1 ? "" : "s"}`
-            : "No model loaded"}
-      </span>
+        <span className="ml-auto text-sm text-muted-foreground tabular-nums">
+          {loadingName
+            ? `Loading ${loadingName}…`
+            : model
+              ? `${model.name} · ${formatBytes(model.byteLength)}${model.fromLibrary ? " · from library" : ""} · ${noteCount} note${noteCount === 1 ? "" : "s"}`
+              : "No model loaded"}
+        </span>
+      </div>
 
-      {notice && (
-        <div className="toolbar__notice" role="status">
-          <span>{notice}</span>
-          <button type="button" onClick={dismissNotice}>
-            Dismiss
-          </button>
-        </div>
-      )}
+      {(notice ?? projectError ?? error) && (
+        <div className="flex flex-col gap-2 px-4 pb-2">
+          {notice && (
+            <Alert role="status">
+              <Info />
+              <AlertDescription>{notice}</AlertDescription>
+              <AlertAction>
+                <Button size="xs" type="button" variant="ghost" onClick={dismissNotice}>
+                  Dismiss
+                </Button>
+              </AlertAction>
+            </Alert>
+          )}
 
-      {projectError && (
-        <div className="toolbar__error" role="alert">
-          <span>{projectError}</span>
-          <button type="button" onClick={dismissProjectError}>
-            Dismiss
-          </button>
-        </div>
-      )}
+          {projectError && (
+            <Alert variant="destructive">
+              <TriangleAlert />
+              <AlertDescription>{projectError}</AlertDescription>
+              <AlertAction>
+                <Button size="xs" type="button" variant="ghost" onClick={dismissProjectError}>
+                  Dismiss
+                </Button>
+              </AlertAction>
+            </Alert>
+          )}
 
-      {error && (
-        <div className="toolbar__error" role="alert">
-          <span>{error}</span>
-          <button type="button" onClick={dismissError}>
-            Dismiss
-          </button>
+          {error && (
+            <Alert variant="destructive">
+              <TriangleAlert />
+              <AlertDescription>{error}</AlertDescription>
+              <AlertAction>
+                <Button size="xs" type="button" variant="ghost" onClick={dismissError}>
+                  Dismiss
+                </Button>
+              </AlertAction>
+            </Alert>
+          )}
         </div>
       )}
     </header>

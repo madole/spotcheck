@@ -1,7 +1,11 @@
+import { Check } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { useAnnotationStore } from "../annotations/annotationStore.ts";
 import { useViewerStore } from "../viewer/viewerStore.ts";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function NotePanel() {
   const annotations = useAnnotationStore((state) => state.annotations);
@@ -29,11 +33,13 @@ export default function NotePanel() {
   };
 
   return (
-    <aside className="panel">
-      <h2 className="panel__title">Notes ({annotations.length})</h2>
+    <aside className="flex min-h-0 w-70 shrink-0 flex-col border-l border-border bg-card">
+      <h2 className="border-b border-border px-4 py-3 text-[13px] font-semibold text-foreground">
+        Notes ({annotations.length})
+      </h2>
 
       <ul
-        className="panel__list"
+        className="min-h-0 flex-1 overflow-y-auto p-2"
         onKeyDown={(event) => {
           if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
             return;
@@ -57,27 +63,32 @@ export default function NotePanel() {
       >
         {annotations.map((annotation) => (
           <li key={annotation.id}>
-            <button
-              className={`panel__entry${annotation.id === selectedId ? " panel__entry--selected" : ""}`}
-              onClick={() => open(annotation.id, annotation.anchor.position)}
+            <Button
+              className="w-full justify-start gap-2"
               type="button"
+              variant={annotation.id === selectedId ? "secondary" : "ghost"}
+              onClick={() => open(annotation.id, annotation.anchor.position)}
             >
-              <span className="panel__ordinal">{annotation.ordinal}</span>
+              <Badge variant="outline">{annotation.ordinal}</Badge>
 
-              <span className="panel__preview">
+              <span className="flex-1 truncate text-left">
                 {annotation.text.trim() === "" ? "Draft" : annotation.text.trim()}
               </span>
 
-              {annotation.resolved && <span className="panel__resolved">resolved</span>}
-            </button>
+              {annotation.resolved && (
+                <Badge variant="secondary">
+                  <Check data-icon="inline-start" />
+                  resolved
+                </Badge>
+              )}
+            </Button>
           </li>
         ))}
       </ul>
 
       {selected && (
-        <div className="panel__editor">
-          <textarea
-            className="panel__text"
+        <div className="flex flex-col gap-2 border-t border-border p-3">
+          <Textarea
             onChange={(event) => setText(selected.id, event.target.value)}
             onKeyDown={(event) => {
               if (event.key !== "Escape") {
@@ -98,14 +109,26 @@ export default function NotePanel() {
             value={selected.text}
           />
 
-          <div className="panel__actions">
-            <button onClick={() => setResolved(selected.id, !selected.resolved)} type="button">
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => setResolved(selected.id, !selected.resolved)}
+            >
               {selected.resolved ? "Reopen" : "Resolve"}
-            </button>
+            </Button>
 
-            <button onClick={() => remove(selected.id)} type="button">
+            <Button
+              className="flex-1"
+              size="sm"
+              type="button"
+              variant="destructive"
+              onClick={() => remove(selected.id)}
+            >
               Delete
-            </button>
+            </Button>
           </div>
         </div>
       )}
