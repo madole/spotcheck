@@ -1,11 +1,30 @@
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { Group } from "three";
 
+import { useAnnotationStore } from "../annotations/annotationStore.ts";
+import { anchorFromIntersection } from "../annotations/coordinates.ts";
 import type { LoadedModel } from "../model/loadModelFile.ts";
 import { applyNormalization } from "../model/normalize.ts";
 import { useModelStore } from "../model/modelStore.ts";
 import CameraRig, { HOME_POSITION } from "./CameraRig.tsx";
+
+/** Pointer travel that turns a click into an orbit. */
+const CLICK_SLOP_PX = 6;
+/** Press longer than this is a deliberate gesture, not a click. */
+const CLICK_TIMEOUT_MS = 400;
+
+interface Press {
+  x: number;
+  y: number;
+  at: number;
+}
+
+function isClick(press: Press, event: ThreeEvent<PointerEvent>): boolean {
+  const travelled = Math.hypot(event.clientX - press.x, event.clientY - press.y);
+
+  return travelled <= CLICK_SLOP_PX && event.timeStamp - press.at <= CLICK_TIMEOUT_MS;
+}
 
 function RendererBridge() {
   const gl = useThree((state) => state.gl);
@@ -35,6 +54,8 @@ function Placeholder() {
  */
 function ModelRoot({ model }: { model: LoadedModel }) {
   const group = useRef<Group>(null);
+  const add = useAnnotationStore((state) => state.add);
+  const press = useRef<Press | undefined>(undefined);
 
   useLayoutEffect(() => {
     if (group.current) {
@@ -44,7 +65,27 @@ function ModelRoot({ model }: { model: LoadedModel }) {
 
   return (
     <group ref={group}>
-      <primitive object={model.scene} />
+      <primitive
+        object={model.scene}
+        onPointerDown={(event: ThreeEvent<PointerEvent>) => {
+          press.current = { x: event.clientX, y: event.clientY, at: event.timeStamp };
+        }}
+        onPointerUp={(event: ThreeEvent<PointerEvent>) => {
+          const start = press.current;
+
+          press.current = undefined;
+
+          if (!start || event.button !== 0 || !isClick(start, event) || !group.current) {
+            return;
+          }
+
+          const anchor = anchorFromIntersection(group.current, event);
+
+          if (anchor) {
+            add(anchor);
+          }
+        }}
+      />
     </group>
   );
 }

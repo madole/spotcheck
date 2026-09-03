@@ -1,6 +1,7 @@
 import type { WebGLRenderer } from "three";
 import { create } from "zustand";
 
+import { useAnnotationStore } from "../annotations/annotationStore.ts";
 import { disposeObject3D } from "./dispose.ts";
 import { createGltfLoader, type GltfLoader } from "./gltfLoader.ts";
 import { loadModelFile, type LoadedModel } from "./loadModelFile.ts";
@@ -70,6 +71,9 @@ export const useModelStore = create<ModelState>()((set, get) => ({
     if (model) {
       disposeObject3D(model.scene);
     }
+
+    // Annotations belong to the model they were made on.
+    useAnnotationStore.getState().clear();
 
     set({ model: loaded, loadingName: undefined });
   },
