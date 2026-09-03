@@ -13,6 +13,8 @@ export const HOME_POSITION = new Vector3(2.6, 1.9, 3.2);
 
 const FIT_RADIUS = TARGET_RADIUS * 1.15;
 
+const NOTE_FIT_RADIUS = TARGET_RADIUS * 0.25;
+
 function frame(controls: Controls, animate: boolean): Promise<void> {
   const position = HOME_POSITION.clone().setLength(controls.getDistanceToFitSphere(FIT_RADIUS));
 
@@ -23,6 +25,7 @@ export default function CameraRig() {
   const controls = useRef<Controls>(null);
   const model = useModelStore((state) => state.model);
   const frameAllToken = useViewerStore((state) => state.frameAllToken);
+  const focus = useViewerStore((state) => state.focus);
 
   useEffect(() => {
     const instance = controls.current;
@@ -39,6 +42,24 @@ export default function CameraRig() {
       void frame(instance, true);
     }
   }, [frameAllToken]);
+
+  useEffect(() => {
+    const instance = controls.current;
+
+    if (!instance || !focus) {
+      return;
+    }
+
+    const target = new Vector3(...focus.position);
+    const distance = instance.getDistanceToFitSphere(NOTE_FIT_RADIUS);
+    const direction = instance.camera.position
+      .clone()
+      .sub(instance.getTarget(new Vector3()))
+      .normalize();
+    const position = target.clone().add(direction.multiplyScalar(distance));
+
+    void instance.setLookAt(position.x, position.y, position.z, target.x, target.y, target.z, true);
+  }, [focus]);
 
   return (
     <CameraControls

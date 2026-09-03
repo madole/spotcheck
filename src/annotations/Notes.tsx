@@ -25,6 +25,8 @@ const DRAFT_COLOR = "#fbbf24";
 
 const SAVED_COLOR = "#38bdf8";
 
+const RESOLVED_COLOR = "#4ade80";
+
 /** The slice of troika's text instance we need to size the label backing. */
 interface TroikaText {
   textRenderInfo?: { blockBounds?: [number, number, number, number] };
@@ -36,13 +38,13 @@ function labelFor(annotation: Annotation): string {
     : `${annotation.ordinal} · ${annotation.text.trim()}`;
 }
 
-function Note({ annotation }: { annotation: Annotation }) {
+function Note({ annotation, selected }: { annotation: Annotation; selected: boolean }) {
   const group = useRef<Group>(null);
   const label = useRef<Group>(null);
   const [size, setSize] = useState<[number, number]>([FONT_SIZE * 2, FONT_SIZE]);
   const anchor = annotation.anchor;
   const draft = annotation.text.trim() === "";
-  const color = draft ? DRAFT_COLOR : SAVED_COLOR;
+  const color = annotation.resolved ? RESOLVED_COLOR : draft ? DRAFT_COLOR : SAVED_COLOR;
 
   const quaternion = useMemo(
     () => new Quaternion().setFromUnitVectors(FORWARD, new Vector3(...anchor.normal)),
@@ -62,6 +64,13 @@ function Note({ annotation }: { annotation: Annotation }) {
 
   return (
     <group position={anchor.position} quaternion={quaternion} ref={group}>
+      {selected && (
+        <mesh>
+          <sphereGeometry args={[MARKER_RADIUS * 2.2, 12, 12]} />
+          <meshBasicMaterial color={color} opacity={0.35} toneMapped={false} transparent />
+        </mesh>
+      )}
+
       <mesh>
         <sphereGeometry args={[MARKER_RADIUS, 12, 12]} />
         <meshBasicMaterial color={color} toneMapped={false} />
@@ -109,6 +118,9 @@ function Note({ annotation }: { annotation: Annotation }) {
 
 export default function Notes() {
   const annotations = useAnnotationStore((state) => state.annotations);
+  const selectedId = useAnnotationStore((state) => state.selectedId);
 
-  return annotations.map((annotation) => <Note annotation={annotation} key={annotation.id} />);
+  return annotations.map((annotation) => (
+    <Note annotation={annotation} key={annotation.id} selected={annotation.id === selectedId} />
+  ));
 }
