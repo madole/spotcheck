@@ -1,5 +1,6 @@
 import { useRef } from "react";
 
+import { useAnnotationStore } from "../annotations/annotationStore.ts";
 import { useProjectStore } from "../project/projectStore.ts";
 import { useModelStore } from "../model/modelStore.ts";
 import { useViewerStore } from "../viewer/viewerStore.ts";
@@ -16,7 +17,9 @@ export default function Toolbar() {
   const loadingName = useModelStore((state) => state.loadingName);
   const error = useModelStore((state) => state.error);
   const open = useModelStore((state) => state.open);
+  const exportScreenshot = useModelStore((state) => state.exportScreenshot);
   const dismissError = useModelStore((state) => state.dismissError);
+  const noteCount = useAnnotationStore((state) => state.annotations.length);
   const requestFrameAll = useViewerStore((state) => state.requestFrameAll);
   const savedAt = useProjectStore((state) => state.savedAt);
   const projectError = useProjectStore((state) => state.error);
@@ -33,7 +36,7 @@ export default function Toolbar() {
 
   return (
     <header className="toolbar">
-      <span className="toolbar__title">r3f-inspection</span>
+      <span className="toolbar__title">Spotcheck</span>
 
       <button className="toolbar__action" type="button" onClick={() => inputRef.current?.click()}>
         Open model…
@@ -67,6 +70,15 @@ export default function Toolbar() {
         type="button"
       >
         Save notes
+      </button>
+
+      <button
+        className="toolbar__action"
+        disabled={!model}
+        onClick={exportScreenshot}
+        type="button"
+      >
+        Export PNG
       </button>
 
       <button
@@ -125,7 +137,7 @@ export default function Toolbar() {
         {loadingName
           ? `Loading ${loadingName}…`
           : model
-            ? `${model.name} · ${formatBytes(model.byteLength)}${model.fromLibrary ? " · from library" : ""}`
+            ? `${model.name} · ${formatBytes(model.byteLength)}${model.fromLibrary ? " · from library" : ""} · ${noteCount} note${noteCount === 1 ? "" : "s"}`
             : "No model loaded"}
       </span>
 

@@ -118,7 +118,11 @@ function Scene() {
 
 export default function Viewer() {
   return (
-    <Canvas camera={{ position: HOME_POSITION.toArray(), fov: 45 }} dpr={[1, 2]}>
+    <Canvas
+      camera={{ position: HOME_POSITION.toArray(), fov: 45 }}
+      dpr={[1, 2]}
+      gl={{ preserveDrawingBuffer: true }}
+    >
       <RendererBridge />
 
       <color attach="background" args={["#16171d"]} />

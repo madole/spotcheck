@@ -57,6 +57,20 @@ export function computeNormalization(object: Object3D): Normalization {
 }
 
 /**
+ * Map a point in the model root's local space back to world space, undoing
+ * `applyNormalization`. Anchor and focus positions need this before anything
+ * outside the root — like the camera — can use them.
+ */
+export function toWorldPoint(
+  normalization: Normalization,
+  point: [number, number, number],
+): [number, number, number] {
+  const { scale, center } = normalization;
+
+  return point.map((value, index) => (value - center[index]) * scale) as [number, number, number];
+}
+
+/**
  * Scale and offset `object` so its bounding sphere sits at the origin with
  * `TARGET_RADIUS`. Apply to a wrapper group, never to the loaded scene itself.
  */

@@ -1,8 +1,14 @@
-import { Box3, BoxGeometry, Group, Mesh, Sphere } from "three";
+import { Box3, BoxGeometry, Group, Mesh, Sphere, Vector3 } from "three";
 
 import { describe, expect, it } from "vite-plus/test";
 
-import { TARGET_RADIUS, applyNormalization, computeNormalization, measure } from "./normalize.ts";
+import {
+  TARGET_RADIUS,
+  applyNormalization,
+  computeNormalization,
+  measure,
+  toWorldPoint,
+} from "./normalize.ts";
 
 function boxOf(size: number): Mesh {
   return new Mesh(new BoxGeometry(size, size, size));
@@ -80,5 +86,26 @@ describe("applyNormalization", () => {
 
     expect(group.scale.x).toBe(group.scale.y);
     expect(group.scale.y).toBe(group.scale.z);
+  });
+});
+
+describe("toWorldPoint", () => {
+  it("matches the normalized group's world transform", () => {
+    const model = boxOf(4);
+
+    model.position.set(10, -3, 7);
+
+    const normalization = computeNormalization(model);
+    const group = wrap(model);
+
+    applyNormalization(group, normalization);
+
+    const local: [number, number, number] = [11, -2, 6];
+    const expected = group.localToWorld(new Vector3(...local));
+    const [x, y, z] = toWorldPoint(normalization, local);
+
+    expect(x).toBeCloseTo(expected.x, 10);
+    expect(y).toBeCloseTo(expected.y, 10);
+    expect(z).toBeCloseTo(expected.z, 10);
   });
 });

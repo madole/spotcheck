@@ -95,7 +95,17 @@ describe("parseProject", () => {
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.error).toContain("not an r3f-inspection project");
+    expect(result.error).toContain("not a Spotcheck project");
+  });
+
+  it("opens a project written before the rename", () => {
+    const raw = JSON.parse(serializeProject(project()));
+
+    raw.format = "r3f-inspection";
+
+    const result = parseProject(JSON.stringify(raw));
+
+    expect(result.ok).toBe(true);
   });
 
   it("rejects a newer version with an actionable message", () => {

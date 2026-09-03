@@ -2,7 +2,7 @@ import { CameraControls } from "@react-three/drei";
 import { useEffect, useRef, type ComponentRef } from "react";
 import { Vector3 } from "three";
 
-import { TARGET_RADIUS } from "../model/normalize.ts";
+import { TARGET_RADIUS, toWorldPoint } from "../model/normalize.ts";
 import { useModelStore } from "../model/modelStore.ts";
 import { useViewerStore } from "./viewerStore.ts";
 
@@ -46,11 +46,12 @@ export default function CameraRig() {
   useEffect(() => {
     const instance = controls.current;
 
-    if (!instance || !focus) {
+    if (!instance || !focus || !model) {
       return;
     }
 
-    const target = new Vector3(...focus.position);
+    // Focus positions are in the model root's local space; the camera needs world space.
+    const target = new Vector3(...toWorldPoint(model.normalization, focus.position));
     const distance = instance.getDistanceToFitSphere(NOTE_FIT_RADIUS);
     const direction = instance.camera.position
       .clone()
@@ -59,7 +60,7 @@ export default function CameraRig() {
     const position = target.clone().add(direction.multiplyScalar(distance));
 
     void instance.setLookAt(position.x, position.y, position.z, target.x, target.y, target.z, true);
-  }, [focus]);
+  }, [focus, model]);
 
   return (
     <CameraControls

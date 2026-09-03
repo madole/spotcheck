@@ -2,6 +2,8 @@ import type { WebGLRenderer } from "three";
 import { create } from "zustand";
 
 import { useAnnotationStore } from "../annotations/annotationStore.ts";
+import { downloadUrl } from "../ui/download.ts";
+import { captureFrame, screenshotFilename } from "../viewer/screenshot.ts";
 import { disposeObject3D } from "./dispose.ts";
 import { createGltfLoader, type GltfLoader } from "./gltfLoader.ts";
 import { loadModelFile, type LoadedModel } from "./loadModelFile.ts";
@@ -14,6 +16,7 @@ export interface ModelState {
   error: string | undefined;
   setRenderer: (renderer: WebGLRenderer | undefined) => void;
   open: (file: File) => Promise<void>;
+  exportScreenshot: () => void;
   dismissError: () => void;
 }
 
@@ -76,6 +79,20 @@ export const useModelStore = create<ModelState>()((set, get) => ({
     useAnnotationStore.getState().clear();
 
     set({ model: loaded, loadingName: undefined });
+  },
+
+  exportScreenshot() {
+    const { renderer, model } = get();
+
+    if (!renderer || !model) {
+      return;
+    }
+
+    try {
+      downloadUrl(captureFrame(renderer), screenshotFilename(model.name));
+    } catch (error) {
+      set({ error: `Could not export a screenshot: ${messageFor(error)}` });
+    }
   },
 
   dismissError() {

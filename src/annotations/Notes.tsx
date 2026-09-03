@@ -3,23 +3,35 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, useState } from "react";
 import { Quaternion, Vector3, type Group } from "three";
 
+import { useModelStore } from "../model/modelStore.ts";
 import { useAnnotationStore, type Annotation } from "./annotationStore.ts";
 
 const FONT_URL = `${import.meta.env.BASE_URL}fonts/inter-latin-400-normal.woff`;
 
-/** Local +Z of a note points along the surface normal. */
+/** Local +Z of a note points off the surface, along the stalk. */
 const FORWARD = new Vector3(0, 0, 1);
 
-/**
- * Camera distance the note is designed for. Notes scale with distance from
- * there, which keeps them the same size on screen at any zoom.
- */
-const REFERENCE_DISTANCE = 3;
+/** World up, which a note's stalk leans towards. */
+const UP = new Vector3(0, 1, 0);
 
-const FONT_SIZE = 0.075;
-const LEADER_LENGTH = 0.09;
-const MARKER_RADIUS = 0.016;
-const PADDING = 0.5;
+/**
+ * Camera distance past which a note stops shrinking: beyond it a note grows
+ * with distance to hold its on-screen size. Closer than it, notes keep a fixed
+ * size in model space and so grow on screen as you zoom in.
+ */
+const FLOOR_DISTANCE = 1.5;
+
+/** Stalk length in world units, long enough to lift the label clear of the model. */
+const STALK_LENGTH = 0.12;
+
+/** How far a stalk leans from the surface normal towards world up. Below 1 keeps it anchored. */
+const UP_BIAS = 0.6;
+
+const FONT_SIZE = 0.025;
+/** Labels wrap onto further lines past this width, in world units. */
+const MAX_LABEL_WIDTH = 0.22;
+const MARKER_RADIUS = 0.012;
+const PADDING = 0.45;
 
 const DRAFT_COLOR = "#fbbf24";
 
@@ -38,7 +50,14 @@ function labelFor(annotation: Annotation): string {
     : `${annotation.ordinal} · ${annotation.text.trim()}`;
 }
 
-function Note({ annotation, selected }: { annotation: Annotation; selected: boolean }) {
+interface NoteProps {
+  annotation: Annotation;
+  selected: boolean;
+  /** Model-root units per world unit, so notes read the same on any source scale. */
+  unitsPerWorld: number;
+}
+
+function Note({ annotation, selected, unitsPerWorld }: NoteProps) {
   const group = useRef<Group>(null);
   const label = useRef<Group>(null);
   const [size, setSize] = useState<[number, number]>([FONT_SIZE * 2, FONT_SIZE]);
@@ -46,19 +65,23 @@ function Note({ annotation, selected }: { annotation: Annotation; selected: bool
   const draft = annotation.text.trim() === "";
   const color = annotation.resolved ? RESOLVED_COLOR : draft ? DRAFT_COLOR : SAVED_COLOR;
 
-  const quaternion = useMemo(
-    () => new Quaternion().setFromUnitVectors(FORWARD, new Vector3(...anchor.normal)),
-    [anchor.normal],
-  );
+  const quaternion = useMemo(() => {
+    const direction = new Vector3(...anchor.normal).addScaledVector(UP, UP_BIAS).normalize();
+
+    return new Quaternion().setFromUnitVectors(FORWARD, direction);
+  }, [anchor.normal]);
 
   const worldPosition = useMemo(() => new Vector3(), []);
 
   useFrame(({ camera }) => {
-    // Measured to the label, not the surface point, so a note stays the same
-    // size on screen even when the camera is nearly on top of it.
+    // Measured to the label, not the surface point, so a note holds its size
+    // on screen even when the camera is nearly on top of it.
     if (group.current && label.current) {
       label.current.getWorldPosition(worldPosition);
-      group.current.scale.setScalar(camera.position.distanceTo(worldPosition) / REFERENCE_DISTANCE);
+
+      const distance = camera.position.distanceTo(worldPosition);
+
+      group.current.scale.setScalar(Math.max(1, distance / FLOOR_DISTANCE) * unitsPerWorld);
     }
   });
 
@@ -78,16 +101,16 @@ function Note({ annotation, selected }: { annotation: Annotation; selected: bool
 
       <Line
         color={color}
-        lineWidth={1}
-        opacity={0.7}
+        lineWidth={2}
+        opacity={0.85}
         points={[
           [0, 0, 0],
-          [0, 0, LEADER_LENGTH],
+          [0, 0, STALK_LENGTH],
         ]}
         transparent
       />
 
-      <group position={[0, 0, LEADER_LENGTH]} ref={label}>
+      <group position={[0, 0, STALK_LENGTH]} ref={label}>
         <Billboard>
           <mesh position={[0, 0, -0.002]}>
             <planeGeometry args={[size[0] + PADDING * FONT_SIZE, size[1] + PADDING * FONT_SIZE]} />
@@ -100,6 +123,8 @@ function Note({ annotation, selected }: { annotation: Annotation; selected: bool
             color={color}
             font={FONT_URL}
             fontSize={FONT_SIZE}
+            maxWidth={MAX_LABEL_WIDTH}
+            textAlign="center"
             onSync={(text: TroikaText) => {
               const bounds = text.textRenderInfo?.blockBounds;
 
@@ -119,8 +144,15 @@ function Note({ annotation, selected }: { annotation: Annotation; selected: bool
 export default function Notes() {
   const annotations = useAnnotationStore((state) => state.annotations);
   const selectedId = useAnnotationStore((state) => state.selectedId);
+  const modelScale = useModelStore((state) => state.model?.normalization.scale ?? 1);
+  const unitsPerWorld = 1 / modelScale;
 
   return annotations.map((annotation) => (
-    <Note annotation={annotation} key={annotation.id} selected={annotation.id === selectedId} />
+    <Note
+      annotation={annotation}
+      key={annotation.id}
+      selected={annotation.id === selectedId}
+      unitsPerWorld={unitsPerWorld}
+    />
   ));
 }

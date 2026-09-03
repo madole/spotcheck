@@ -1,7 +1,10 @@
 import type { Anchor } from "../annotations/coordinates.ts";
 import type { Normalization } from "../model/normalize.ts";
 
-export const FORMAT = "r3f-inspection";
+export const FORMAT = "spotcheck";
+
+/** Formats written before the rename; still openable. */
+const LEGACY_FORMAT = "r3f-inspection";
 export const VERSION = 1;
 export const HASH_PREFIX = "sha256:";
 
@@ -138,10 +141,10 @@ export function parseProject(text: string): ParseResult {
     return { ok: false, error: "That file is not valid JSON." };
   }
 
-  if (!isObject(raw)) return { ok: false, error: "That file is not an r3f-inspection project." };
+  if (!isObject(raw)) return { ok: false, error: "That file is not a Spotcheck project." };
 
-  if (raw.format !== FORMAT) {
-    return { ok: false, error: "That file is not an r3f-inspection project." };
+  if (raw.format !== FORMAT && raw.format !== LEGACY_FORMAT) {
+    return { ok: false, error: "That file is not a Spotcheck project." };
   }
 
   if (typeof raw.version !== "number") {

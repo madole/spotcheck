@@ -5,6 +5,7 @@ import { useAnnotationStore } from "../annotations/annotationStore.ts";
 import { hashBytes } from "../model/hash.ts";
 import { getModel, getSession, isQuotaError, putSession } from "../model/modelLibrary.ts";
 import { useModelStore } from "../model/modelStore.ts";
+import { downloadBlob } from "../ui/download.ts";
 import {
   buildProject,
   modelHash,
@@ -27,13 +28,7 @@ export interface ProjectState {
 }
 
 function download(json: string, filename: string): void {
-  const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(new Blob([json], { type: "application/json" }), filename);
 }
 
 function currentProject(): Project | undefined {

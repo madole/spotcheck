@@ -10,7 +10,8 @@ the screen.
 - Each annotation renders as a numbered 3D marker just off the surface, a leader line,
   and a billboarded text label with a readable background — all real scene geometry.
 - Labels face the camera and are hidden behind the model when it rotates away.
-- Labels maintain a legible size at any zoom level.
+- Labels keep a fixed size in model space up close, so they grow as you zoom in, and hold a
+  legible on-screen size once the camera pulls back past a floor distance.
 - A newly created note shows as a clearly unsaved draft until committed.
 
 ## Patterns to follow

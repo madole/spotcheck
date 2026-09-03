@@ -245,6 +245,39 @@ canvas {
   }
 }
 
+.empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.empty__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 36px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgb(31 32 40 / 92%);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.empty__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.empty__hint {
+  margin: 0;
+  max-width: 280px;
+}
+
 .dropzone {
   position: fixed;
   inset: 0;

@@ -24,7 +24,7 @@ Without this, notes die with the tab, which defeats the purpose.
 
 ```json
 {
-  "format": "r3f-inspection",
+  "format": "spotcheck",
   "version": 1,
   "savedAt": "2026-09-03T00:00:00.000Z",
   "model": {

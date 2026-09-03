@@ -25,7 +25,7 @@ interface ModelLibrarySchema extends DBSchema {
   };
 }
 
-const DB_NAME = "r3f-inspection";
+const DB_NAME = "spotcheck";
 const DB_VERSION = 2;
 const STORE = "models";
 const SESSION_STORE = "sessions";
