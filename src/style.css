@@ -111,6 +111,30 @@ canvas {
   }
 }
 
+.toolbar__action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toolbar__notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--text-strong);
+
+  button {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+}
+
 .panel {
   display: flex;
   flex-direction: column;

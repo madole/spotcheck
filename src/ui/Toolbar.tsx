@@ -1,5 +1,6 @@
 import { useRef } from "react";
 
+import { useProjectStore } from "../project/projectStore.ts";
 import { useModelStore } from "../model/modelStore.ts";
 import { useViewerStore } from "../viewer/viewerStore.ts";
 
@@ -17,7 +18,18 @@ export default function Toolbar() {
   const open = useModelStore((state) => state.open);
   const dismissError = useModelStore((state) => state.dismissError);
   const requestFrameAll = useViewerStore((state) => state.requestFrameAll);
+  const savedAt = useProjectStore((state) => state.savedAt);
+  const projectError = useProjectStore((state) => state.error);
+  const notice = useProjectStore((state) => state.notice);
+  const pending = useProjectStore((state) => state.pending);
+  const saveProject = useProjectStore((state) => state.save);
+  const openProject = useProjectStore((state) => state.open);
+  const locate = useProjectStore((state) => state.locate);
+  const dismissProjectError = useProjectStore((state) => state.dismissError);
+  const dismissNotice = useProjectStore((state) => state.dismissNotice);
   const inputRef = useRef<HTMLInputElement>(null);
+  const projectInputRef = useRef<HTMLInputElement>(null);
+  const modelInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <header className="toolbar">
@@ -47,6 +59,68 @@ export default function Toolbar() {
         Frame all
       </button>
 
+      <button
+        className="toolbar__action"
+        disabled={!model}
+        onClick={saveProject}
+        title={savedAt ? `Last saved ${savedAt}` : undefined}
+        type="button"
+      >
+        Save notes
+      </button>
+
+      <button
+        className="toolbar__action"
+        type="button"
+        onClick={() => projectInputRef.current?.click()}
+      >
+        Open project…
+      </button>
+
+      <input
+        ref={projectInputRef}
+        accept=".json,application/json"
+        className="toolbar__file"
+        onChange={(event) => {
+          const file = event.target.files?.item(0);
+
+          if (file) {
+            void openProject(file);
+          }
+
+          event.target.value = "";
+        }}
+        type="file"
+      />
+
+      {pending && (
+        <>
+          <button
+            className="toolbar__action"
+            type="button"
+            onClick={() => modelInputRef.current?.click()}
+          >
+            Locate {pending.model.name}…
+          </button>
+
+          <input
+            ref={modelInputRef}
+            accept=".glb,model/gltf-binary"
+            className="toolbar__file"
+            onChange={(event) => {
+              const file = event.target.files?.item(0);
+
+              if (file) {
+                void locate(file);
+              }
+
+              event.target.value = "";
+            }}
+            type="file"
+          />
+        </>
+      )}
+
       <span className="toolbar__status">
         {loadingName
           ? `Loading ${loadingName}…`
@@ -54,6 +128,24 @@ export default function Toolbar() {
             ? `${model.name} · ${formatBytes(model.byteLength)}${model.fromLibrary ? " · from library" : ""}`
             : "No model loaded"}
       </span>
+
+      {notice && (
+        <div className="toolbar__notice" role="status">
+          <span>{notice}</span>
+          <button type="button" onClick={dismissNotice}>
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {projectError && (
+        <div className="toolbar__error" role="alert">
+          <span>{projectError}</span>
+          <button type="button" onClick={dismissProjectError}>
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="toolbar__error" role="alert">

@@ -9,16 +9,26 @@ export interface StoredModel {
   addedAt: string;
 }
 
+export interface StoredSession {
+  key: "working";
+  project: string;
+}
+
 interface ModelLibrarySchema extends DBSchema {
   models: {
     key: string;
     value: StoredModel;
   };
+  sessions: {
+    key: string;
+    value: StoredSession;
+  };
 }
 
 const DB_NAME = "r3f-inspection";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = "models";
+const SESSION_STORE = "sessions";
 
 let connection: Promise<IDBPDatabase<ModelLibrarySchema>> | undefined;
 
@@ -27,6 +37,10 @@ function db(): Promise<IDBPDatabase<ModelLibrarySchema>> {
     upgrade(database) {
       if (!database.objectStoreNames.contains(STORE)) {
         database.createObjectStore(STORE, { keyPath: "id" });
+      }
+
+      if (!database.objectStoreNames.contains(SESSION_STORE)) {
+        database.createObjectStore(SESSION_STORE, { keyPath: "key" });
       }
     },
   });
@@ -44,6 +58,14 @@ export async function putModel(model: StoredModel): Promise<void> {
 
 export async function listModels(): Promise<StoredModel[]> {
   return (await db()).getAll(STORE);
+}
+
+export async function getSession(): Promise<StoredSession | undefined> {
+  return (await db()).get(SESSION_STORE, "working");
+}
+
+export async function putSession(project: string): Promise<void> {
+  await (await db()).put(SESSION_STORE, { key: "working", project });
 }
 
 export function isQuotaError(error: unknown): boolean {
