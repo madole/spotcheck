@@ -72,7 +72,7 @@ export default function DropZone({ children }: DropZoneProps) {
     <>
       {children}
       {isOver && (
-        <div className="pointer-events-none fixed inset-0 z-10 grid place-items-center border-2 border-dashed border-primary/60 bg-background/80 text-lg text-foreground">
+        <div className="pointer-events-none fixed inset-0 z-10 grid place-items-center border-4 border-dashed border-primary/60 bg-background/80 text-xl font-semibold text-foreground">
           Drop a .glb file to inspect it
         </div>
       )}

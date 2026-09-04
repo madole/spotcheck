@@ -75,7 +75,7 @@ export default function App() {
 
   return (
     <DropZone>
-      <div className="dark flex h-full flex-col bg-background text-foreground">
+      <div className="flex h-full flex-col bg-background text-foreground">
         <Toolbar />
         <main className="flex min-h-0 flex-1">
           <div className="relative min-w-0 flex-1">

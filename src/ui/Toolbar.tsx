@@ -38,11 +38,13 @@ export default function Toolbar() {
   const modelInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <header className="flex flex-col border-b border-border bg-card">
-      <div className="flex items-center gap-2 px-4 py-2">
-        <span className="text-sm font-semibold text-foreground">Spotcheck</span>
+    <header className="flex flex-col border-b-2 border-border bg-card">
+      <div className="flex items-center gap-2 px-4 py-3">
+        <span className="text-sm font-bold uppercase tracking-widest text-foreground">
+          Spotcheck
+        </span>
 
-        <Button size="sm" type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
           Open model…
         </Button>
 
@@ -62,13 +64,12 @@ export default function Toolbar() {
           type="file"
         />
 
-        <Button size="sm" type="button" variant="outline" onClick={requestFrameAll}>
+        <Button type="button" variant="outline" onClick={requestFrameAll}>
           Frame all
         </Button>
 
         <Button
           disabled={!model}
-          size="sm"
           type="button"
           variant="outline"
           onClick={saveProject}
@@ -77,22 +78,11 @@ export default function Toolbar() {
           Save notes
         </Button>
 
-        <Button
-          disabled={!model}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={exportScreenshot}
-        >
+        <Button disabled={!model} type="button" variant="outline" onClick={exportScreenshot}>
           Export PNG
         </Button>
 
-        <Button
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={() => projectInputRef.current?.click()}
-        >
+        <Button type="button" variant="outline" onClick={() => projectInputRef.current?.click()}>
           Open project…
         </Button>
 
@@ -114,12 +104,7 @@ export default function Toolbar() {
 
         {pending && (
           <>
-            <Button
-              size="sm"
-              type="button"
-              variant="outline"
-              onClick={() => modelInputRef.current?.click()}
-            >
+            <Button type="button" variant="outline" onClick={() => modelInputRef.current?.click()}>
               Locate {pending.model.name}…
             </Button>
 
@@ -141,7 +126,7 @@ export default function Toolbar() {
           </>
         )}
 
-        <span className="ml-auto text-sm text-muted-foreground tabular-nums">
+        <span className="ml-auto text-sm font-medium text-muted-foreground tabular-nums">
           {loadingName
             ? `Loading ${loadingName}…`
             : model

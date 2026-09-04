@@ -33,8 +33,8 @@ export default function NotePanel() {
   };
 
   return (
-    <aside className="flex min-h-0 w-70 shrink-0 flex-col border-l border-border bg-card">
-      <h2 className="border-b border-border px-4 py-3 text-[13px] font-semibold text-foreground">
+    <aside className="flex min-h-0 w-70 shrink-0 flex-col border-l-2 border-border bg-card">
+      <h2 className="border-b-2 border-border px-4 py-3 text-sm font-bold uppercase tracking-wider text-foreground">
         Notes ({annotations.length})
       </h2>
 
@@ -87,7 +87,7 @@ export default function NotePanel() {
       </ul>
 
       {selected && (
-        <div className="flex flex-col gap-2 border-t border-border p-3">
+        <div className="flex flex-col gap-2 border-t-2 border-border p-3">
           <Textarea
             onChange={(event) => setText(selected.id, event.target.value)}
             onKeyDown={(event) => {
@@ -112,7 +112,6 @@ export default function NotePanel() {
           <div className="flex gap-2">
             <Button
               className="flex-1"
-              size="sm"
               type="button"
               variant="outline"
               onClick={() => setResolved(selected.id, !selected.resolved)}
@@ -122,7 +121,6 @@ export default function NotePanel() {
 
             <Button
               className="flex-1"
-              size="sm"
               type="button"
               variant="destructive"
               onClick={() => remove(selected.id)}
