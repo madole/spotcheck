@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
+import { NEO_BUTTON } from "./neo.ts";
+import { cn } from "@/lib/utils";
+
 export default function NotePanel() {
   const annotations = useAnnotationStore((state) => state.annotations);
   const selectedId = useAnnotationStore((state) => state.selectedId);
@@ -33,8 +36,8 @@ export default function NotePanel() {
   };
 
   return (
-    <aside className="flex min-h-0 w-70 shrink-0 flex-col border-l-2 border-border bg-card">
-      <h2 className="border-b-2 border-border px-4 py-3 text-sm font-bold uppercase tracking-wider text-foreground">
+    <aside className="flex min-h-0 w-70 shrink-0 flex-col border-l-4 border-border bg-card">
+      <h2 className="border-b-4 border-border px-4 py-3 font-display text-base tracking-wide text-foreground">
         Notes ({annotations.length})
       </h2>
 
@@ -64,19 +67,23 @@ export default function NotePanel() {
         {annotations.map((annotation) => (
           <li key={annotation.id}>
             <Button
-              className="w-full justify-start gap-2"
+              className={cn(
+                "w-full justify-start gap-2 border-2 border-transparent",
+                annotation.id === selectedId &&
+                  "border-border shadow-[3px_3px_0_0_var(--foreground)]",
+              )}
               type="button"
               variant={annotation.id === selectedId ? "secondary" : "ghost"}
               onClick={() => open(annotation.id, annotation.anchor.position)}
             >
-              <Badge variant="outline">{annotation.ordinal}</Badge>
+              <Badge>{annotation.ordinal}</Badge>
 
               <span className="flex-1 truncate text-left">
                 {annotation.text.trim() === "" ? "Draft" : annotation.text.trim()}
               </span>
 
               {annotation.resolved && (
-                <Badge variant="secondary">
+                <Badge variant="success">
                   <Check data-icon="inline-start" />
                   resolved
                 </Badge>
@@ -87,8 +94,9 @@ export default function NotePanel() {
       </ul>
 
       {selected && (
-        <div className="flex flex-col gap-2 border-t-2 border-border p-3">
+        <div className="flex flex-col gap-3 border-t-4 border-border p-3">
           <Textarea
+            className="border-2 shadow-[3px_3px_0_0_var(--foreground)]"
             onChange={(event) => setText(selected.id, event.target.value)}
             onKeyDown={(event) => {
               if (event.key !== "Escape") {
@@ -111,7 +119,7 @@ export default function NotePanel() {
 
           <div className="flex gap-2">
             <Button
-              className="flex-1"
+              className={cn("flex-1", NEO_BUTTON)}
               type="button"
               variant="outline"
               onClick={() => setResolved(selected.id, !selected.resolved)}
@@ -120,7 +128,7 @@ export default function NotePanel() {
             </Button>
 
             <Button
-              className="flex-1"
+              className={cn("flex-1 border-border", NEO_BUTTON)}
               type="button"
               variant="destructive"
               onClick={() => remove(selected.id)}

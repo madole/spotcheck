@@ -8,6 +8,8 @@ import NotePanel from "./ui/NotePanel.tsx";
 import Toolbar from "./ui/Toolbar.tsx";
 import Viewer from "./viewer/Viewer.tsx";
 import { Button } from "@/components/ui/button";
+
+import { NEO_BUTTON } from "./ui/neo.ts";
 import {
   Empty,
   EmptyContent,
@@ -29,7 +31,7 @@ function EmptyState() {
 
   return (
     <div className="pointer-events-none absolute inset-0 grid place-items-center p-4">
-      <Empty className="pointer-events-auto w-auto max-w-sm border bg-card shadow-xl">
+      <Empty className="pointer-events-auto w-auto max-w-sm -rotate-1 border-[3px] bg-card shadow-[8px_8px_0_0_var(--foreground)]">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <Box />
@@ -41,7 +43,12 @@ function EmptyState() {
         </EmptyHeader>
 
         <EmptyContent>
-          <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+          <Button
+            className={NEO_BUTTON}
+            type="button"
+            variant="outline"
+            onClick={() => inputRef.current?.click()}
+          >
             Open model…
           </Button>
 

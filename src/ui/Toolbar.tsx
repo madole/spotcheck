@@ -8,6 +8,8 @@ import { useViewerStore } from "../viewer/viewerStore.ts";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
+import { NEO_BUTTON } from "./neo.ts";
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -38,13 +40,16 @@ export default function Toolbar() {
   const modelInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <header className="flex flex-col border-b-2 border-border bg-card">
-      <div className="flex items-center gap-2 px-4 py-3">
-        <span className="text-sm font-bold uppercase tracking-widest text-foreground">
-          Spotcheck
-        </span>
+    <header className="flex flex-col border-b-4 border-border bg-card">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className="font-display text-lg tracking-wide text-foreground">Spotcheck</span>
 
-        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
+        <Button
+          className={NEO_BUTTON}
+          type="button"
+          variant="outline"
+          onClick={() => inputRef.current?.click()}
+        >
           Open model…
         </Button>
 
@@ -64,11 +69,12 @@ export default function Toolbar() {
           type="file"
         />
 
-        <Button type="button" variant="outline" onClick={requestFrameAll}>
+        <Button className={NEO_BUTTON} type="button" variant="outline" onClick={requestFrameAll}>
           Frame all
         </Button>
 
         <Button
+          className={NEO_BUTTON}
           disabled={!model}
           type="button"
           variant="outline"
@@ -78,11 +84,22 @@ export default function Toolbar() {
           Save notes
         </Button>
 
-        <Button disabled={!model} type="button" variant="outline" onClick={exportScreenshot}>
+        <Button
+          className={NEO_BUTTON}
+          disabled={!model}
+          type="button"
+          variant="outline"
+          onClick={exportScreenshot}
+        >
           Export PNG
         </Button>
 
-        <Button type="button" variant="outline" onClick={() => projectInputRef.current?.click()}>
+        <Button
+          className={NEO_BUTTON}
+          type="button"
+          variant="outline"
+          onClick={() => projectInputRef.current?.click()}
+        >
           Open project…
         </Button>
 
@@ -104,7 +121,12 @@ export default function Toolbar() {
 
         {pending && (
           <>
-            <Button type="button" variant="outline" onClick={() => modelInputRef.current?.click()}>
+            <Button
+              className={NEO_BUTTON}
+              type="button"
+              variant="outline"
+              onClick={() => modelInputRef.current?.click()}
+            >
               Locate {pending.model.name}…
             </Button>
 
@@ -138,7 +160,7 @@ export default function Toolbar() {
       {(notice ?? projectError ?? error) && (
         <div className="flex flex-col gap-2 px-4 pb-2">
           {notice && (
-            <Alert role="status">
+            <Alert className="border-2 shadow-[4px_4px_0_0_var(--foreground)]" role="status">
               <Info />
               <AlertDescription>{notice}</AlertDescription>
               <AlertAction>
@@ -150,7 +172,10 @@ export default function Toolbar() {
           )}
 
           {projectError && (
-            <Alert variant="destructive">
+            <Alert
+              className="border-2 shadow-[4px_4px_0_0_var(--foreground)]"
+              variant="destructive"
+            >
               <TriangleAlert />
               <AlertDescription>{projectError}</AlertDescription>
               <AlertAction>
@@ -162,7 +187,10 @@ export default function Toolbar() {
           )}
 
           {error && (
-            <Alert variant="destructive">
+            <Alert
+              className="border-2 shadow-[4px_4px_0_0_var(--foreground)]"
+              variant="destructive"
+            >
               <TriangleAlert />
               <AlertDescription>{error}</AlertDescription>
               <AlertAction>
