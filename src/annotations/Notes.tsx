@@ -6,7 +6,7 @@ import { Quaternion, Vector3, type Group } from "three";
 import { useModelStore } from "../model/modelStore.ts";
 import { useAnnotationStore, type Annotation } from "./annotationStore.ts";
 
-const FONT_URL = `${import.meta.env.BASE_URL}fonts/inter-latin-400-normal.woff`;
+const FONT_URL = `${import.meta.env.BASE_URL}fonts/archivo-black-latin-400-normal.woff`;
 
 /** Local +Z of a note points off the surface, along the stalk. */
 const FORWARD = new Vector3(0, 0, 1);
@@ -32,12 +32,18 @@ const FONT_SIZE = 0.025;
 const MAX_LABEL_WIDTH = 0.22;
 const MARKER_RADIUS = 0.003;
 const PADDING = 0.45;
+/** Black outline around the sticker plate, in font sizes. */
+const BORDER = 0.4;
+/** Down-right offset of the sticker's hard shadow, in font sizes. */
+const SHADOW_OFFSET = 0.3;
 
-const DRAFT_COLOR = "#fbbf24";
+const INK = "#111111";
 
-const SAVED_COLOR = "#38bdf8";
+const DRAFT_COLOR = "#ff90e8";
 
-const RESOLVED_COLOR = "#4ade80";
+const SAVED_COLOR = "#ffd60a";
+
+const RESOLVED_COLOR = "#34d399";
 
 /** The slice of troika's text instance we need to size the label backing. */
 interface TroikaText {
@@ -112,15 +118,35 @@ function Note({ annotation, selected, unitsPerWorld }: NoteProps) {
 
       <group position={[0, 0, STALK_LENGTH]} ref={label}>
         <Billboard>
+          <mesh position={[SHADOW_OFFSET * FONT_SIZE, -SHADOW_OFFSET * FONT_SIZE, -0.004]}>
+            <planeGeometry
+              args={[
+                size[0] + (PADDING + BORDER) * FONT_SIZE,
+                size[1] + (PADDING + BORDER) * FONT_SIZE,
+              ]}
+            />
+            <meshBasicMaterial color={INK} toneMapped={false} />
+          </mesh>
+
+          <mesh position={[0, 0, -0.003]}>
+            <planeGeometry
+              args={[
+                size[0] + (PADDING + BORDER) * FONT_SIZE,
+                size[1] + (PADDING + BORDER) * FONT_SIZE,
+              ]}
+            />
+            <meshBasicMaterial color={INK} toneMapped={false} />
+          </mesh>
+
           <mesh position={[0, 0, -0.002]}>
             <planeGeometry args={[size[0] + PADDING * FONT_SIZE, size[1] + PADDING * FONT_SIZE]} />
-            <meshBasicMaterial color="#0d0e13" opacity={0.82} toneMapped={false} transparent />
+            <meshBasicMaterial color={color} toneMapped={false} />
           </mesh>
 
           <Text
             anchorX="center"
             anchorY="middle"
-            color={color}
+            color={INK}
             font={FONT_URL}
             fontSize={FONT_SIZE}
             maxWidth={MAX_LABEL_WIDTH}
