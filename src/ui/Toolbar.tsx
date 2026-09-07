@@ -86,6 +86,8 @@ export default function Toolbar() {
   const clip = useViewerStore((state) => state.clip);
   const clipOpen = useViewerStore((state) => state.clipOpen);
   const setClipOpen = useViewerStore((state) => state.setClipOpen);
+  const lightsOpen = useViewerStore((state) => state.lightsOpen);
+  const setLightsOpen = useViewerStore((state) => state.setLightsOpen);
   const requestFrameAll = useViewerStore((state) => state.requestFrameAll);
   const savedAt = useProjectStore((state) => state.savedAt);
   const projectError = useProjectStore((state) => state.error);
@@ -162,10 +164,27 @@ export default function Toolbar() {
           disabled={!model}
           type="button"
           variant={clipOpen || clip ? "default" : "outline"}
-          onClick={() => setClipOpen(!clipOpen)}
+          onClick={() => {
+            setClipOpen(!clipOpen);
+            setLightsOpen(false);
+          }}
           title="Cut the model with a section plane"
         >
           Section
+        </Button>
+
+        <Button
+          className={NEO_BUTTON}
+          disabled={!model}
+          type="button"
+          variant={lightsOpen ? "default" : "outline"}
+          onClick={() => {
+            setLightsOpen(!lightsOpen);
+            setClipOpen(false);
+          }}
+          title="Adjust the scene lighting"
+        >
+          Lights
         </Button>
 
         <Button

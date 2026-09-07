@@ -4,6 +4,24 @@ import type { Clip } from "./clipPlane.ts";
 
 export type Tool = "annotate" | "measure";
 
+export interface Lights {
+  /** Hemisphere fill from above. */
+  hemi: number;
+  /** Key directional light strength. */
+  key: number;
+  /** Fill directional light strength. */
+  fill: number;
+  /** Key light orbit around the model, in degrees. */
+  keyAngle: number;
+}
+
+export const DEFAULT_LIGHTS: Lights = {
+  hemi: 0.6,
+  key: 1.6,
+  fill: 0.4,
+  keyAngle: 37,
+};
+
 export interface ViewerState {
   tool: Tool;
   setTool: (tool: Tool) => void;
@@ -14,6 +32,12 @@ export interface ViewerState {
   /** Whether the floating section-cut panel is open. */
   clipOpen: boolean;
   setClipOpen: (open: boolean) => void;
+  lights: Lights;
+  setLights: (lights: Partial<Lights>) => void;
+  resetLights: () => void;
+  /** Whether the floating lighting panel is open. */
+  lightsOpen: boolean;
+  setLightsOpen: (open: boolean) => void;
   /** Incremented every time the user asks for the model to be framed. */
   frameAllToken: number;
   requestFrameAll: () => void;
@@ -30,6 +54,11 @@ export const useViewerStore = create<ViewerState>()((set) => ({
   clearClip: () => set({ clip: null }),
   clipOpen: false,
   setClipOpen: (open) => set({ clipOpen: open }),
+  lights: { ...DEFAULT_LIGHTS },
+  setLights: (lights) => set((state) => ({ lights: { ...state.lights, ...lights } })),
+  resetLights: () => set({ lights: { ...DEFAULT_LIGHTS } }),
+  lightsOpen: false,
+  setLightsOpen: (open) => set({ lightsOpen: open }),
   frameAllToken: 0,
   requestFrameAll: () => set((state) => ({ frameAllToken: state.frameAllToken + 1 })),
   focus: null,

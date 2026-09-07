@@ -192,6 +192,10 @@ function Scene() {
 }
 
 export default function Viewer() {
+  const lights = useViewerStore((state) => state.lights);
+  const keyAngle = (lights.keyAngle * Math.PI) / 180;
+  const keyPosition: [number, number, number] = [5 * Math.cos(keyAngle), 6, 5 * Math.sin(keyAngle)];
+
   return (
     <Canvas
       camera={{ position: HOME_POSITION.toArray(), fov: 45 }}
@@ -202,9 +206,9 @@ export default function Viewer() {
 
       <color attach="background" args={["#16171d"]} />
 
-      <hemisphereLight color="#d8d8ff" groundColor="#2a2a30" intensity={0.6} />
-      <directionalLight position={[4, 6, 3]} intensity={1.6} />
-      <directionalLight position={[-5, 2, -4]} intensity={0.4} />
+      <hemisphereLight color="#d8d8ff" groundColor="#2a2a30" intensity={lights.hemi} />
+      <directionalLight position={keyPosition} intensity={lights.key} />
+      <directionalLight position={[-5, 2, -4]} intensity={lights.fill} />
 
       <CameraRig />
       <ClipPlane />

@@ -5,6 +5,7 @@ import { useModelStore } from "./model/modelStore.ts";
 import { startAutosave, useProjectStore } from "./project/projectStore.ts";
 import ClipPanel from "./ui/ClipPanel.tsx";
 import DropZone from "./ui/DropZone.tsx";
+import LightPanel from "./ui/LightPanel.tsx";
 import NotePanel from "./ui/NotePanel.tsx";
 import Toolbar from "./ui/Toolbar.tsx";
 import Viewer from "./viewer/Viewer.tsx";
@@ -90,6 +91,7 @@ export default function App() {
             <Viewer />
             <EmptyState />
             <ClipPanel />
+            <LightPanel />
           </div>
           <NotePanel />
         </main>
