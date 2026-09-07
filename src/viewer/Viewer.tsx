@@ -1,14 +1,16 @@
 import { Canvas, useThree, type ThreeEvent } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Group } from "three";
 
 import { useAnnotationStore } from "../annotations/annotationStore.ts";
-import { anchorFromIntersection } from "../annotations/coordinates.ts";
+import { anchorFromIntersection, toLocalPoint } from "../annotations/coordinates.ts";
 import Notes from "../annotations/Notes.tsx";
 import type { LoadedModel } from "../model/loadModelFile.ts";
 import { applyNormalization } from "../model/normalize.ts";
 import { useModelStore } from "../model/modelStore.ts";
 import CameraRig, { HOME_POSITION } from "./CameraRig.tsx";
+import { useViewerStore } from "./viewerStore.ts";
+import Measurements from "./Measurements.tsx";
 
 /** Pointer travel that turns a click into an orbit. */
 const CLICK_SLOP_PX = 6;
@@ -56,7 +58,13 @@ function Placeholder() {
 function ModelRoot({ model }: { model: LoadedModel }) {
   const group = useRef<Group>(null);
   const add = useAnnotationStore((state) => state.add);
+  const addMeasurement = useAnnotationStore((state) => state.addMeasurement);
+  const measureDraft = useAnnotationStore((state) => state.measureDraft);
+  const setMeasureDraft = useAnnotationStore((state) => state.setMeasureDraft);
+  const clearMeasureDraft = useAnnotationStore((state) => state.clearMeasureDraft);
+  const tool = useViewerStore((state) => state.tool);
   const press = useRef<Press | undefined>(undefined);
+  const [hover, setHover] = useState<[number, number, number] | null>(null);
 
   useLayoutEffect(() => {
     if (group.current) {
@@ -64,29 +72,95 @@ function ModelRoot({ model }: { model: LoadedModel }) {
     }
   }, [model.normalization]);
 
+  useEffect(() => {
+    if (tool !== "measure") {
+      clearMeasureDraft();
+      setHover(null);
+    }
+  }, [tool, clearMeasureDraft]);
+
+  useEffect(() => {
+    clearMeasureDraft();
+    setHover(null);
+  }, [model, clearMeasureDraft]);
+
+  useEffect(() => {
+    if (tool !== "measure") {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        clearMeasureDraft();
+        setHover(null);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [tool, clearMeasureDraft]);
+
   return (
     <group ref={group}>
       <Notes />
+      <Measurements hover={hover} />
 
       <primitive
         object={model.scene}
         onPointerDown={(event: ThreeEvent<PointerEvent>) => {
           press.current = { x: event.clientX, y: event.clientY, at: event.timeStamp };
         }}
+        onPointerMove={(event: ThreeEvent<PointerEvent>) => {
+          if (tool !== "measure" || !measureDraft || !group.current) {
+            return;
+          }
+
+          const local = toLocalPoint(group.current, event.point);
+
+          setHover([local.x, local.y, local.z]);
+        }}
         onPointerUp={(event: ThreeEvent<PointerEvent>) => {
           const start = press.current;
 
           press.current = undefined;
 
-          if (!start || event.button !== 0 || !isClick(start, event) || !group.current) {
+          if (!start || !group.current) {
+            return;
+          }
+
+          if (event.button !== 0) {
+            if (tool === "measure") {
+              clearMeasureDraft();
+              setHover(null);
+            }
+
+            return;
+          }
+
+          if (!isClick(start, event)) {
             return;
           }
 
           const anchor = anchorFromIntersection(group.current, event);
 
-          if (anchor) {
-            add(anchor);
+          if (!anchor) {
+            return;
           }
+
+          if (tool === "measure") {
+            if (measureDraft) {
+              addMeasurement(measureDraft, anchor);
+            } else {
+              setMeasureDraft(anchor);
+            }
+
+            setHover(null);
+
+            return;
+          }
+
+          add(anchor);
         }}
       />
     </group>

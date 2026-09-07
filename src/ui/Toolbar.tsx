@@ -1,5 +1,5 @@
 import { Info, TriangleAlert } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAnnotationStore } from "../annotations/annotationStore.ts";
 import { useModelStore } from "../model/modelStore.ts";
@@ -17,6 +17,62 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function UnitFactorInput({
+  modelId,
+  unitFactor,
+  unitLabel,
+  setUnits,
+}: {
+  modelId: string;
+  unitFactor: number;
+  unitLabel: string;
+  setUnits: (factor: number, label: string) => void;
+}) {
+  const [text, setText] = useState(String(unitFactor));
+
+  useEffect(() => {
+    setText(String(unitFactor));
+  }, [modelId, unitFactor]);
+
+  return (
+    <label
+      className="flex items-center gap-1 text-sm font-medium text-muted-foreground"
+      title="How many of these units make one model unit"
+    >
+      1 unit =
+      <input
+        className="w-16 rounded-md border-2 border-border bg-background px-1 py-0.5 text-foreground tabular-nums"
+        min={0}
+        onBlur={() => {
+          const factor = Number(text);
+
+          if (Number.isFinite(factor) && factor > 0) {
+            setUnits(factor, unitLabel);
+          } else {
+            setText(String(unitFactor));
+          }
+        }}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          }
+        }}
+        step="any"
+        type="number"
+        value={text}
+      />
+      <input
+        aria-label="Unit name"
+        className="w-14 rounded-md border-2 border-border bg-background px-1 py-0.5 text-foreground"
+        onChange={(event) => setUnits(unitFactor, event.target.value)}
+        type="text"
+        value={unitLabel}
+      />
+    </label>
+  );
+}
+
 export default function Toolbar() {
   const model = useModelStore((state) => state.model);
   const loadingName = useModelStore((state) => state.loadingName);
@@ -25,11 +81,16 @@ export default function Toolbar() {
   const exportScreenshot = useModelStore((state) => state.exportScreenshot);
   const dismissError = useModelStore((state) => state.dismissError);
   const noteCount = useAnnotationStore((state) => state.annotations.length);
+  const tool = useViewerStore((state) => state.tool);
+  const setTool = useViewerStore((state) => state.setTool);
   const requestFrameAll = useViewerStore((state) => state.requestFrameAll);
   const savedAt = useProjectStore((state) => state.savedAt);
   const projectError = useProjectStore((state) => state.error);
   const notice = useProjectStore((state) => state.notice);
   const pending = useProjectStore((state) => state.pending);
+  const unitFactor = useModelStore((state) => state.unitFactor);
+  const unitLabel = useModelStore((state) => state.unitLabel);
+  const setUnits = useModelStore((state) => state.setUnits);
   const saveProject = useProjectStore((state) => state.save);
   const openProject = useProjectStore((state) => state.open);
   const locate = useProjectStore((state) => state.locate);
@@ -71,6 +132,26 @@ export default function Toolbar() {
 
         <Button className={NEO_BUTTON} type="button" variant="outline" onClick={requestFrameAll}>
           Frame all
+        </Button>
+
+        <Button
+          className={NEO_BUTTON}
+          disabled={!model}
+          type="button"
+          variant={tool === "annotate" ? "default" : "outline"}
+          onClick={() => setTool("annotate")}
+        >
+          Annotate
+        </Button>
+
+        <Button
+          className={NEO_BUTTON}
+          disabled={!model}
+          type="button"
+          variant={tool === "measure" ? "default" : "outline"}
+          onClick={() => setTool("measure")}
+        >
+          Measure
         </Button>
 
         <Button
@@ -146,6 +227,15 @@ export default function Toolbar() {
               type="file"
             />
           </>
+        )}
+
+        {model && (
+          <UnitFactorInput
+            modelId={model.id}
+            setUnits={setUnits}
+            unitFactor={unitFactor}
+            unitLabel={unitLabel}
+          />
         )}
 
         <span className="ml-auto text-sm font-medium text-muted-foreground tabular-nums">

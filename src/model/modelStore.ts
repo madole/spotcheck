@@ -7,6 +7,7 @@ import { captureFrame, screenshotFilename } from "../viewer/screenshot.ts";
 import { disposeObject3D } from "./dispose.ts";
 import { createGltfLoader, type GltfLoader } from "./gltfLoader.ts";
 import { loadModelFile, type LoadedModel } from "./loadModelFile.ts";
+import { getModel, putModel } from "./modelLibrary.ts";
 
 export interface ModelState {
   renderer: WebGLRenderer | undefined;
@@ -14,7 +15,11 @@ export interface ModelState {
   model: LoadedModel | undefined;
   loadingName: string | undefined;
   error: string | undefined;
+  /** Display-only factor: 1 source unit renders as this many `unitLabel`. */
+  unitFactor: number;
+  unitLabel: string;
   setRenderer: (renderer: WebGLRenderer | undefined) => void;
+  setUnits: (factor: number, label: string) => void;
   open: (file: File) => Promise<void>;
   exportScreenshot: () => void;
   dismissError: () => void;
@@ -32,6 +37,8 @@ export const useModelStore = create<ModelState>()((set, get) => ({
   model: undefined,
   loadingName: undefined,
   error: undefined,
+  unitFactor: 1,
+  unitLabel: "units",
 
   setRenderer(renderer) {
     get().loader?.dispose();
@@ -40,6 +47,28 @@ export const useModelStore = create<ModelState>()((set, get) => ({
       renderer,
       loader: renderer ? createGltfLoader(renderer) : undefined,
     });
+  },
+
+  setUnits(factor, label) {
+    if (!Number.isFinite(factor) || factor <= 0) {
+      return;
+    }
+
+    const { model } = get();
+
+    set({ unitFactor: factor, unitLabel: label.trim() === "" ? "units" : label });
+
+    if (model) {
+      const { unitFactor, unitLabel } = get();
+
+      void getModel(model.id)
+        .then((stored) => {
+          if (stored) {
+            return putModel({ ...stored, unitFactor, unitLabel });
+          }
+        })
+        .catch(() => undefined);
+    }
   },
 
   async open(file) {
@@ -78,7 +107,14 @@ export const useModelStore = create<ModelState>()((set, get) => ({
     // Annotations belong to the model they were made on.
     useAnnotationStore.getState().clear();
 
-    set({ model: loaded, loadingName: undefined });
+    const stored = await getModel(loaded.id).catch(() => undefined);
+
+    set({
+      model: loaded,
+      loadingName: undefined,
+      unitFactor: stored?.unitFactor ?? 1,
+      unitLabel: stored?.unitLabel ?? "units",
+    });
   },
 
   exportScreenshot() {

@@ -2,6 +2,8 @@ import { Check } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { useAnnotationStore } from "../annotations/annotationStore.ts";
+import { formatDistance, toDisplayUnits } from "../measurements/measure.ts";
+import { useModelStore } from "../model/modelStore.ts";
 import { useViewerStore } from "../viewer/viewerStore.ts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,9 @@ export default function NotePanel() {
   const discardDraft = useAnnotationStore((state) => state.discardDraft);
   const remove = useAnnotationStore((state) => state.remove);
   const requestFocus = useViewerStore((state) => state.requestFocus);
+  const modelScale = useModelStore((state) => state.model?.normalization.scale ?? 1);
+  const unitFactor = useModelStore((state) => state.unitFactor);
+  const unitLabel = useModelStore((state) => state.unitLabel);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
   const selected = annotations.find((annotation) => annotation.id === selectedId);
@@ -79,8 +84,21 @@ export default function NotePanel() {
               <Badge>{annotation.ordinal}</Badge>
 
               <span className="flex-1 truncate text-left">
-                {annotation.text.trim() === "" ? "Draft" : annotation.text.trim()}
+                {annotation.text.trim() === ""
+                  ? annotation.measurement === undefined
+                    ? "Draft"
+                    : "Measurement"
+                  : annotation.text.trim()}
               </span>
+
+              {annotation.measurement !== undefined && (
+                <span className="shrink-0 text-xs font-medium text-muted-foreground tabular-nums">
+                  {formatDistance(
+                    toDisplayUnits(annotation.measurement.distanceLocal, modelScale, unitFactor),
+                    unitLabel,
+                  )}
+                </span>
+              )}
 
               {annotation.resolved && (
                 <Badge variant="success">
@@ -95,6 +113,16 @@ export default function NotePanel() {
 
       {selected && (
         <div className="flex flex-col gap-3 border-t-4 border-border p-3">
+          {selected.measurement !== undefined && (
+            <p className="text-sm font-semibold text-foreground tabular-nums">
+              Distance:{" "}
+              {formatDistance(
+                toDisplayUnits(selected.measurement.distanceLocal, modelScale, unitFactor),
+                unitLabel,
+              )}
+            </p>
+          )}
+
           <Textarea
             className="border-2 shadow-[3px_3px_0_0_var(--foreground)]"
             onChange={(event) => setText(selected.id, event.target.value)}

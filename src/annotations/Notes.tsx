@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { Quaternion, Vector3, type Group } from "three";
 
 import { useModelStore } from "../model/modelStore.ts";
+import { formatDistance, toDisplayUnits } from "../measurements/measure.ts";
 import { useAnnotationStore, type Annotation } from "./annotationStore.ts";
 
 const FONT_URL = `${import.meta.env.BASE_URL}fonts/archivo-black-latin-400-normal.woff`;
@@ -39,6 +40,11 @@ const SHADOW_OFFSET = 0.3;
 
 const INK = "#111111";
 
+const MEASURE_COLOR = "#22d3ee";
+const MEASURE_FONT_SIZE = 0.018;
+/** Gap between the note plate and the measurement plate hung below it. */
+const MEASURE_GAP = 0.008;
+
 const DRAFT_COLOR = "#ff90e8";
 
 const SAVED_COLOR = "#ffd60a";
@@ -61,9 +67,10 @@ interface NoteProps {
   selected: boolean;
   /** Model-root units per world unit, so notes read the same on any source scale. */
   unitsPerWorld: number;
+  distanceLabel: string | undefined;
 }
 
-function Note({ annotation, selected, unitsPerWorld }: NoteProps) {
+function Note({ annotation, selected, unitsPerWorld, distanceLabel }: NoteProps) {
   const group = useRef<Group>(null);
   const label = useRef<Group>(null);
   const [size, setSize] = useState<[number, number]>([FONT_SIZE * 2, FONT_SIZE]);
@@ -161,6 +168,76 @@ function Note({ annotation, selected, unitsPerWorld }: NoteProps) {
           >
             {labelFor(annotation)}
           </Text>
+
+          {distanceLabel && (
+            <group
+              position={[
+                0,
+                -(size[1] + (PADDING + BORDER) * FONT_SIZE) / 2 -
+                  MEASURE_GAP -
+                  (MEASURE_FONT_SIZE * 1.6) / 2,
+                0,
+              ]}
+            >
+              <mesh
+                position={[
+                  SHADOW_OFFSET * MEASURE_FONT_SIZE,
+                  -SHADOW_OFFSET * MEASURE_FONT_SIZE,
+                  -0.004,
+                ]}
+              >
+                <planeGeometry
+                  args={[
+                    Math.max(
+                      distanceLabel.length * MEASURE_FONT_SIZE * 0.62 +
+                        (PADDING + BORDER) * MEASURE_FONT_SIZE,
+                      MEASURE_FONT_SIZE * 2,
+                    ),
+                    MEASURE_FONT_SIZE * 1.6 + (PADDING + BORDER) * MEASURE_FONT_SIZE,
+                  ]}
+                />
+                <meshBasicMaterial color={INK} toneMapped={false} />
+              </mesh>
+
+              <mesh position={[0, 0, -0.003]}>
+                <planeGeometry
+                  args={[
+                    Math.max(
+                      distanceLabel.length * MEASURE_FONT_SIZE * 0.62 +
+                        (PADDING + BORDER) * MEASURE_FONT_SIZE,
+                      MEASURE_FONT_SIZE * 2,
+                    ),
+                    MEASURE_FONT_SIZE * 1.6 + (PADDING + BORDER) * MEASURE_FONT_SIZE,
+                  ]}
+                />
+                <meshBasicMaterial color={INK} toneMapped={false} />
+              </mesh>
+
+              <mesh position={[0, 0, -0.002]}>
+                <planeGeometry
+                  args={[
+                    Math.max(
+                      distanceLabel.length * MEASURE_FONT_SIZE * 0.62 + PADDING * MEASURE_FONT_SIZE,
+                      MEASURE_FONT_SIZE * 2,
+                    ),
+                    MEASURE_FONT_SIZE * 1.6 + PADDING * MEASURE_FONT_SIZE,
+                  ]}
+                />
+                <meshBasicMaterial color={MEASURE_COLOR} toneMapped={false} />
+              </mesh>
+
+              <Text
+                anchorX="center"
+                anchorY="middle"
+                color={INK}
+                font={FONT_URL}
+                fontSize={MEASURE_FONT_SIZE}
+                position={[0, 0, 0.001]}
+              >
+                {distanceLabel}
+              </Text>
+            </group>
+          )}
         </Billboard>
       </group>
     </group>
@@ -171,11 +248,21 @@ export default function Notes() {
   const annotations = useAnnotationStore((state) => state.annotations);
   const selectedId = useAnnotationStore((state) => state.selectedId);
   const modelScale = useModelStore((state) => state.model?.normalization.scale ?? 1);
+  const unitFactor = useModelStore((state) => state.unitFactor);
+  const unitLabel = useModelStore((state) => state.unitLabel);
   const unitsPerWorld = 1 / modelScale;
 
   return annotations.map((annotation) => (
     <Note
       annotation={annotation}
+      distanceLabel={
+        annotation.measurement === undefined
+          ? undefined
+          : formatDistance(
+              toDisplayUnits(annotation.measurement.distanceLocal, modelScale, unitFactor),
+              unitLabel,
+            )
+      }
       key={annotation.id}
       selected={annotation.id === selectedId}
       unitsPerWorld={unitsPerWorld}

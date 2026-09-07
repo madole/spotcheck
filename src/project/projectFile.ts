@@ -5,8 +5,15 @@ export const FORMAT = "spotcheck";
 
 /** Formats written before the rename; still openable. */
 const LEGACY_FORMAT = "r3f-inspection";
-export const VERSION = 1;
+export const VERSION = 2;
+/** v1 files predate measurements and unit factors; they still open. */
+const MIN_VERSION = 1;
 export const HASH_PREFIX = "sha256:";
+
+export interface ProjectMeasurement {
+  b: Anchor;
+  distanceLocal: number;
+}
 
 export interface ProjectAnnotation {
   id: string;
@@ -16,6 +23,7 @@ export interface ProjectAnnotation {
   resolved: boolean;
   createdAt: string;
   updatedAt: string;
+  measurement?: ProjectMeasurement;
 }
 
 export interface ProjectModel {
@@ -23,6 +31,9 @@ export interface ProjectModel {
   name: string;
   byteLength: number;
   normalization: Normalization;
+  /** Display-only factor: 1 source unit renders as this many `unitLabel`. */
+  unitFactor: number;
+  unitLabel: string;
 }
 
 export interface Project {
@@ -42,7 +53,14 @@ export function modelHash(project: Project): string {
 }
 
 export function buildProject(input: {
-  model: { id: string; name: string; byteLength: number; normalization: Normalization };
+  model: {
+    id: string;
+    name: string;
+    byteLength: number;
+    normalization: Normalization;
+    unitFactor: number;
+    unitLabel: string;
+  };
   annotations: ProjectAnnotation[];
   savedAt?: string;
 }): Project {
@@ -76,6 +94,16 @@ export function serializeProject(project: Project): string {
         status: annotation.resolved ? "resolved" : "open",
         createdAt: annotation.createdAt,
         updatedAt: annotation.updatedAt,
+        ...(annotation.measurement === undefined
+          ? {}
+          : {
+              measurement: {
+                position: annotation.measurement.b.position,
+                normal: annotation.measurement.b.normal,
+                meshName: annotation.measurement.b.meshName,
+                distanceLocal: annotation.measurement.distanceLocal,
+              },
+            }),
       })),
     },
     null,
@@ -105,10 +133,26 @@ function parseNormalization(value: unknown): Normalization | string {
   return { scale, center, radius, min, max };
 }
 
+function parseMeasurement(value: unknown, ordinal: number): ProjectMeasurement | string {
+  if (!isObject(value)) return `Note ${ordinal} has a bad measurement.`;
+
+  const { position, normal, meshName, distanceLocal } = value;
+
+  if (!isTuple3(position)) return `Note ${ordinal} has a bad measurement.`;
+  if (!isTuple3(normal)) return `Note ${ordinal} has a bad measurement.`;
+  if (typeof distanceLocal !== "number") return `Note ${ordinal} has a bad measurement.`;
+
+  return {
+    b: { position, normal, meshName: typeof meshName === "string" ? meshName : "" },
+    distanceLocal,
+  };
+}
+
 function parseAnnotation(value: unknown, index: number): ProjectAnnotation | string {
   if (!isObject(value)) return `Annotation ${index + 1} is not an object.`;
 
-  const { id, ordinal, position, normal, anchor, text, status, createdAt, updatedAt } = value;
+  const { id, ordinal, position, normal, anchor, text, status, createdAt, updatedAt, measurement } =
+    value;
 
   if (typeof id !== "string") return `Annotation ${index + 1} has no id.`;
   if (typeof ordinal !== "number") return `Annotation ${index + 1} has no ordinal.`;
@@ -121,6 +165,22 @@ function parseAnnotation(value: unknown, index: number): ProjectAnnotation | str
 
   const meshName = isObject(anchor) && typeof anchor.meshName === "string" ? anchor.meshName : "";
 
+  if (measurement === undefined) {
+    return {
+      id,
+      ordinal,
+      anchor: { position, normal, meshName },
+      text,
+      resolved: status === "resolved",
+      createdAt,
+      updatedAt,
+    };
+  }
+
+  const parsed = parseMeasurement(measurement, ordinal);
+
+  if (typeof parsed === "string") return parsed;
+
   return {
     id,
     ordinal,
@@ -129,6 +189,7 @@ function parseAnnotation(value: unknown, index: number): ProjectAnnotation | str
     resolved: status === "resolved",
     createdAt,
     updatedAt,
+    measurement: parsed,
   };
 }
 
@@ -158,7 +219,7 @@ export function parseProject(text: string): ParseResult {
     };
   }
 
-  if (raw.version < VERSION) {
+  if (raw.version < MIN_VERSION) {
     return {
       ok: false,
       error: `That project uses an unknown version (v${raw.version}) and cannot be opened.`,
@@ -167,7 +228,7 @@ export function parseProject(text: string): ParseResult {
 
   if (!isObject(raw.model)) return { ok: false, error: "That project has no model." };
 
-  const { id, name, byteLength } = raw.model;
+  const { id, name, byteLength, unitFactor, unitLabel } = raw.model;
 
   if (typeof id !== "string" || !id.startsWith(HASH_PREFIX)) {
     return { ok: false, error: "That project does not reference a model hash." };
@@ -203,7 +264,14 @@ export function parseProject(text: string): ParseResult {
       format: FORMAT,
       version: VERSION,
       savedAt: typeof raw.savedAt === "string" ? raw.savedAt : "",
-      model: { id, name, byteLength, normalization },
+      model: {
+        id,
+        name,
+        byteLength,
+        normalization,
+        unitFactor: typeof unitFactor === "number" && unitFactor > 0 ? unitFactor : 1,
+        unitLabel: typeof unitLabel === "string" && unitLabel !== "" ? unitLabel : "units",
+      },
       annotations,
     },
   };

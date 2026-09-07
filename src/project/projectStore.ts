@@ -31,8 +31,12 @@ function download(json: string, filename: string): void {
   downloadBlob(new Blob([json], { type: "application/json" }), filename);
 }
 
+function applyUnits(project: Project): void {
+  useModelStore.getState().setUnits(project.model.unitFactor, project.model.unitLabel);
+}
+
 function currentProject(): Project | undefined {
-  const model = useModelStore.getState().model;
+  const { model, unitFactor, unitLabel } = useModelStore.getState();
 
   if (!model) {
     return undefined;
@@ -44,6 +48,8 @@ function currentProject(): Project | undefined {
       name: model.name,
       byteLength: model.byteLength,
       normalization: model.normalization,
+      unitFactor,
+      unitLabel,
     },
     annotations: useAnnotationStore.getState().annotations,
   });
@@ -105,6 +111,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
 
     if (await loadModelFromLibrary(modelHash(project))) {
       useAnnotationStore.getState().replaceAll(project.annotations);
+      applyUnits(project);
       set({ savedAt: project.savedAt, error: undefined, pending: undefined, notice: undefined });
       return;
     }
@@ -136,6 +143,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
 
     await useModelStore.getState().open(file);
     useAnnotationStore.getState().replaceAll(pending.annotations as Annotation[]);
+    applyUnits(pending);
     set({ savedAt: pending.savedAt, error: undefined, pending: undefined, notice: undefined });
   },
 
@@ -156,6 +164,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
 
     if (await loadModelFromLibrary(modelHash(project))) {
       useAnnotationStore.getState().replaceAll(project.annotations);
+      applyUnits(project);
       set({ savedAt: project.savedAt, pending: undefined });
       return;
     }

@@ -1,6 +1,10 @@
 import { create } from "zustand";
 
+export type Tool = "annotate" | "measure";
+
 export interface ViewerState {
+  tool: Tool;
+  setTool: (tool: Tool) => void;
   /** Incremented every time the user asks for the model to be framed. */
   frameAllToken: number;
   requestFrameAll: () => void;
@@ -10,6 +14,8 @@ export interface ViewerState {
 }
 
 export const useViewerStore = create<ViewerState>()((set) => ({
+  tool: "annotate",
+  setTool: (tool) => set({ tool }),
   frameAllToken: 0,
   requestFrameAll: () => set((state) => ({ frameAllToken: state.frameAllToken + 1 })),
   focus: null,

@@ -35,7 +35,14 @@ function annotation(overrides: Partial<ProjectAnnotation> = {}): ProjectAnnotati
 
 function project(annotations: ProjectAnnotation[] = [annotation()]) {
   return buildProject({
-    model: { id: "ab12", name: "pump.glb", byteLength: 1234567, normalization },
+    model: {
+      id: "ab12",
+      name: "pump.glb",
+      byteLength: 1234567,
+      normalization,
+      unitFactor: 25.4,
+      unitLabel: "mm",
+    },
     annotations,
     savedAt: "2026-09-03T00:00:00.000Z",
   });
@@ -52,7 +59,14 @@ describe("buildProject", () => {
 
   it("leaves an already prefixed hash alone", () => {
     const built = buildProject({
-      model: { id: `${HASH_PREFIX}cd34`, name: "p.glb", byteLength: 1, normalization },
+      model: {
+        id: `${HASH_PREFIX}cd34`,
+        name: "p.glb",
+        byteLength: 1,
+        normalization,
+        unitFactor: 1,
+        unitLabel: "units",
+      },
       annotations: [],
     });
 
@@ -166,5 +180,51 @@ describe("parseProject", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toContain("no position");
+  });
+
+  it("round trips a measurement with identical local data", () => {
+    const original = project([
+      annotation({
+        measurement: {
+          b: { position: [0.4, 0.5, 0.6], normal: [0, 0, 1], meshName: "Face_02" },
+          distanceLocal: 0.5,
+        },
+      }),
+    ]);
+    const parsed = parseProject(serializeProject(original));
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.project.annotations).toEqual(original.annotations);
+    expect(parsed.project.model.unitFactor).toBe(25.4);
+    expect(parsed.project.model.unitLabel).toBe("mm");
+  });
+
+  it("opens a v1 file with default units and no measurements", () => {
+    const raw = JSON.parse(serializeProject(project()));
+
+    raw.version = 1;
+    delete raw.model.unitFactor;
+    delete raw.model.unitLabel;
+
+    const result = parseProject(JSON.stringify(raw));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.project.model.unitFactor).toBe(1);
+    expect(result.project.model.unitLabel).toBe("units");
+  });
+
+  it("rejects a note with a bad measurement", () => {
+    const raw = JSON.parse(serializeProject(project()));
+
+    raw.annotations[0].measurement = { position: [0, 0, 0] };
+
+    const result = parseProject(JSON.stringify(raw));
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain("bad measurement");
   });
 });

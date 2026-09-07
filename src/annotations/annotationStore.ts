@@ -1,6 +1,14 @@
 import { create } from "zustand";
 
+import { distanceBetween } from "../measurements/measure.ts";
 import type { Anchor } from "./coordinates.ts";
+
+export interface Measurement {
+  /** Second pick; the annotation's own anchor is the first pick. */
+  b: Anchor;
+  /** Root-local distance between the picks. Display units derive from this. */
+  distanceLocal: number;
+}
 
 export interface Annotation {
   id: string;
@@ -11,12 +19,18 @@ export interface Annotation {
   resolved: boolean;
   createdAt: string;
   updatedAt: string;
+  measurement?: Measurement;
 }
 
 export interface AnnotationState {
   annotations: Annotation[];
   selectedId: string | null;
+  /** First pick of an in-progress measurement. Ephemeral, never persisted. */
+  measureDraft: Anchor | null;
   add: (anchor: Anchor) => string;
+  addMeasurement: (a: Anchor, b: Anchor) => string;
+  setMeasureDraft: (anchor: Anchor) => void;
+  clearMeasureDraft: () => void;
   setText: (id: string, text: string) => void;
   setResolved: (id: string, resolved: boolean) => void;
   select: (id: string | null) => void;
@@ -31,12 +45,15 @@ function nextOrdinal(annotations: Annotation[]): number {
 }
 
 function withoutEmptyDrafts(annotations: Annotation[]): Annotation[] {
-  return annotations.filter((annotation) => annotation.text !== "");
+  return annotations.filter(
+    (annotation) => annotation.text !== "" || annotation.measurement !== undefined,
+  );
 }
 
 export const useAnnotationStore = create<AnnotationState>()((set) => ({
   annotations: [],
   selectedId: null,
+  measureDraft: null,
 
   add(anchor) {
     const id = crypto.randomUUID();
@@ -81,11 +98,44 @@ export const useAnnotationStore = create<AnnotationState>()((set) => ({
     }));
   },
 
+  addMeasurement(a, b) {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    set((state) => ({
+      annotations: [
+        ...withoutEmptyDrafts(state.annotations),
+        {
+          id,
+          ordinal: nextOrdinal(state.annotations),
+          anchor: a,
+          text: "",
+          resolved: false,
+          createdAt: now,
+          updatedAt: now,
+          measurement: { b, distanceLocal: distanceBetween(a.position, b.position) },
+        },
+      ],
+      selectedId: id,
+      measureDraft: null,
+    }));
+
+    return id;
+  },
+
+  setMeasureDraft(anchor) {
+    set({ measureDraft: anchor });
+  },
+
+  clearMeasureDraft() {
+    set({ measureDraft: null });
+  },
+
   select(id) {
     set((state) => {
       const previous = state.annotations.find((annotation) => annotation.id === state.selectedId);
       const annotations =
-        previous && previous.text === ""
+        previous && previous.text === "" && previous.measurement === undefined
           ? state.annotations.filter((annotation) => annotation.id !== previous.id)
           : state.annotations;
 
@@ -97,7 +147,9 @@ export const useAnnotationStore = create<AnnotationState>()((set) => ({
     set((state) => {
       const selected = state.annotations.find((annotation) => annotation.id === state.selectedId);
 
-      if (!selected || selected.text !== "") return { selectedId: null };
+      if (!selected || selected.text !== "" || selected.measurement !== undefined) {
+        return { selectedId: null };
+      }
 
       return {
         annotations: state.annotations.filter((annotation) => annotation.id !== selected.id),
@@ -114,7 +166,7 @@ export const useAnnotationStore = create<AnnotationState>()((set) => ({
   },
 
   clear() {
-    set({ annotations: [], selectedId: null });
+    set({ annotations: [], selectedId: null, measureDraft: null });
   },
 
   replaceAll(annotations) {

@@ -7,6 +7,9 @@ export interface StoredModel {
   byteLength: number;
   blob: Blob;
   addedAt: string;
+  /** Display-only factor: 1 source unit renders as this many `unitLabel`. */
+  unitFactor?: number;
+  unitLabel?: string;
 }
 
 export interface StoredSession {

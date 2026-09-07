@@ -66,7 +66,7 @@ export default function CameraRig() {
     <CameraControls
       makeDefault
       ref={controls}
-      minDistance={TARGET_RADIUS * 0.35}
+      minDistance={TARGET_RADIUS * 0.15}
       maxDistance={TARGET_RADIUS * 12}
     />
   );
