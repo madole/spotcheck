@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 
 import { useModelStore } from "./model/modelStore.ts";
 import { startAutosave, useProjectStore } from "./project/projectStore.ts";
+import ClipPanel from "./ui/ClipPanel.tsx";
 import DropZone from "./ui/DropZone.tsx";
 import NotePanel from "./ui/NotePanel.tsx";
 import Toolbar from "./ui/Toolbar.tsx";
@@ -88,6 +89,7 @@ export default function App() {
           <div className="relative min-w-0 flex-1">
             <Viewer />
             <EmptyState />
+            <ClipPanel />
           </div>
           <NotePanel />
         </main>

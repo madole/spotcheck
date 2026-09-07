@@ -83,6 +83,9 @@ export default function Toolbar() {
   const noteCount = useAnnotationStore((state) => state.annotations.length);
   const tool = useViewerStore((state) => state.tool);
   const setTool = useViewerStore((state) => state.setTool);
+  const clip = useViewerStore((state) => state.clip);
+  const clipOpen = useViewerStore((state) => state.clipOpen);
+  const setClipOpen = useViewerStore((state) => state.setClipOpen);
   const requestFrameAll = useViewerStore((state) => state.requestFrameAll);
   const savedAt = useProjectStore((state) => state.savedAt);
   const projectError = useProjectStore((state) => state.error);
@@ -152,6 +155,17 @@ export default function Toolbar() {
           onClick={() => setTool("measure")}
         >
           Measure
+        </Button>
+
+        <Button
+          className={NEO_BUTTON}
+          disabled={!model}
+          type="button"
+          variant={clipOpen || clip ? "default" : "outline"}
+          onClick={() => setClipOpen(!clipOpen)}
+          title="Cut the model with a section plane"
+        >
+          Section
         </Button>
 
         <Button

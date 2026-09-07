@@ -6,6 +6,7 @@ import { hashBytes } from "../model/hash.ts";
 import { getModel, getSession, isQuotaError, putSession } from "../model/modelLibrary.ts";
 import { useModelStore } from "../model/modelStore.ts";
 import { downloadBlob } from "../ui/download.ts";
+import { useViewerStore } from "../viewer/viewerStore.ts";
 import {
   buildProject,
   modelHash,
@@ -35,6 +36,14 @@ function applyUnits(project: Project): void {
   useModelStore.getState().setUnits(project.model.unitFactor, project.model.unitLabel);
 }
 
+function applyClip(project: Project): void {
+  if (project.clip) {
+    useViewerStore.getState().setClip(project.clip);
+  } else {
+    useViewerStore.getState().clearClip();
+  }
+}
+
 function currentProject(): Project | undefined {
   const { model, unitFactor, unitLabel } = useModelStore.getState();
 
@@ -52,6 +61,7 @@ function currentProject(): Project | undefined {
       unitLabel,
     },
     annotations: useAnnotationStore.getState().annotations,
+    clip: useViewerStore.getState().clip,
   });
 }
 
@@ -112,6 +122,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (await loadModelFromLibrary(modelHash(project))) {
       useAnnotationStore.getState().replaceAll(project.annotations);
       applyUnits(project);
+      applyClip(project);
       set({ savedAt: project.savedAt, error: undefined, pending: undefined, notice: undefined });
       return;
     }
@@ -144,6 +155,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     await useModelStore.getState().open(file);
     useAnnotationStore.getState().replaceAll(pending.annotations as Annotation[]);
     applyUnits(pending);
+    applyClip(pending);
     set({ savedAt: pending.savedAt, error: undefined, pending: undefined, notice: undefined });
   },
 
@@ -165,6 +177,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     if (await loadModelFromLibrary(modelHash(project))) {
       useAnnotationStore.getState().replaceAll(project.annotations);
       applyUnits(project);
+      applyClip(project);
       set({ savedAt: project.savedAt, pending: undefined });
       return;
     }
@@ -220,6 +233,11 @@ export function startAutosave(): () => void {
 
   const stopModel = useModelStore.subscribe(schedule);
   const stopAnnotations = useAnnotationStore.subscribe(schedule);
+  const stopClip = useViewerStore.subscribe((state, previous) => {
+    if (state.clip !== previous.clip) {
+      schedule();
+    }
+  });
 
   return () => {
     if (timer) {
@@ -228,5 +246,6 @@ export function startAutosave(): () => void {
 
     stopModel();
     stopAnnotations();
+    stopClip();
   };
 }

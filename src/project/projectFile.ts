@@ -1,12 +1,13 @@
 import type { Anchor } from "../annotations/coordinates.ts";
 import type { Normalization } from "../model/normalize.ts";
+import type { Clip, ClipAxis } from "../viewer/clipPlane.ts";
 
 export const FORMAT = "spotcheck";
 
 /** Formats written before the rename; still openable. */
 const LEGACY_FORMAT = "r3f-inspection";
-export const VERSION = 2;
-/** v1 files predate measurements and unit factors; they still open. */
+export const VERSION = 3;
+/** Older files predate measurements, unit factors, and section cuts; they still open. */
 const MIN_VERSION = 1;
 export const HASH_PREFIX = "sha256:";
 
@@ -42,6 +43,8 @@ export interface Project {
   savedAt: string;
   model: ProjectModel;
   annotations: ProjectAnnotation[];
+  /** Active section cut, if any. */
+  clip: Clip | null;
 }
 
 export type ParseResult = { ok: true; project: Project } | { ok: false; error: string };
@@ -62,6 +65,7 @@ export function buildProject(input: {
     unitLabel: string;
   };
   annotations: ProjectAnnotation[];
+  clip: Clip | null;
   savedAt?: string;
 }): Project {
   const id = input.model.id.startsWith(HASH_PREFIX)
@@ -74,6 +78,7 @@ export function buildProject(input: {
     savedAt: input.savedAt ?? new Date().toISOString(),
     model: { ...input.model, id },
     annotations: input.annotations,
+    clip: input.clip,
   };
 }
 
@@ -84,6 +89,7 @@ export function serializeProject(project: Project): string {
       version: project.version,
       savedAt: project.savedAt,
       model: project.model,
+      clip: project.clip,
       annotations: project.annotations.map((annotation) => ({
         id: annotation.id,
         ordinal: annotation.ordinal,
@@ -146,6 +152,26 @@ function parseMeasurement(value: unknown, ordinal: number): ProjectMeasurement |
     b: { position, normal, meshName: typeof meshName === "string" ? meshName : "" },
     distanceLocal,
   };
+}
+
+function parseClip(value: unknown): Clip | null | string {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (!isObject(value)) return "That project has a bad section cut.";
+
+  const { axis, offset } = value;
+
+  if (axis !== "x" && axis !== "y" && axis !== "z") {
+    return "That project has a bad section cut.";
+  }
+
+  if (typeof offset !== "number" || !Number.isFinite(offset)) {
+    return "That project has a bad section cut.";
+  }
+
+  return { axis: axis as ClipAxis, offset };
 }
 
 function parseAnnotation(value: unknown, index: number): ProjectAnnotation | string {
@@ -258,6 +284,10 @@ export function parseProject(text: string): ParseResult {
     annotations.push(annotation);
   }
 
+  const clip = raw.version < 3 ? null : parseClip(raw.clip);
+
+  if (typeof clip === "string") return { ok: false, error: clip };
+
   return {
     ok: true,
     project: {
@@ -273,6 +303,7 @@ export function parseProject(text: string): ParseResult {
         unitLabel: typeof unitLabel === "string" && unitLabel !== "" ? unitLabel : "units",
       },
       annotations,
+      clip,
     },
   };
 }

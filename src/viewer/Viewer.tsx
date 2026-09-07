@@ -9,6 +9,7 @@ import type { LoadedModel } from "../model/loadModelFile.ts";
 import { applyNormalization } from "../model/normalize.ts";
 import { useModelStore } from "../model/modelStore.ts";
 import CameraRig, { HOME_POSITION } from "./CameraRig.tsx";
+import ClipPlane from "./ClipPlane.tsx";
 import { useViewerStore } from "./viewerStore.ts";
 import Measurements from "./Measurements.tsx";
 
@@ -206,6 +207,7 @@ export default function Viewer() {
       <directionalLight position={[-5, 2, -4]} intensity={0.4} />
 
       <CameraRig />
+      <ClipPlane />
 
       <Scene />
     </Canvas>

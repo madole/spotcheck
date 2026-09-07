@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { useAnnotationStore } from "../annotations/annotationStore.ts";
 import { downloadUrl } from "../ui/download.ts";
 import { captureFrame, screenshotFilename } from "../viewer/screenshot.ts";
+import { useViewerStore } from "../viewer/viewerStore.ts";
 import { disposeObject3D } from "./dispose.ts";
 import { createGltfLoader, type GltfLoader } from "./gltfLoader.ts";
 import { loadModelFile, type LoadedModel } from "./loadModelFile.ts";
@@ -106,6 +107,7 @@ export const useModelStore = create<ModelState>()((set, get) => ({
 
     // Annotations belong to the model they were made on.
     useAnnotationStore.getState().clear();
+    useViewerStore.getState().clearClip();
 
     const stored = await getModel(loaded.id).catch(() => undefined);
 

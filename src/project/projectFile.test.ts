@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { Normalization } from "../model/normalize.ts";
+import type { Clip } from "../viewer/clipPlane.ts";
 import {
   FORMAT,
   HASH_PREFIX,
@@ -33,7 +34,7 @@ function annotation(overrides: Partial<ProjectAnnotation> = {}): ProjectAnnotati
   };
 }
 
-function project(annotations: ProjectAnnotation[] = [annotation()]) {
+function project(annotations: ProjectAnnotation[] = [annotation()], clip: Clip | null = null) {
   return buildProject({
     model: {
       id: "ab12",
@@ -44,6 +45,7 @@ function project(annotations: ProjectAnnotation[] = [annotation()]) {
       unitLabel: "mm",
     },
     annotations,
+    clip,
     savedAt: "2026-09-03T00:00:00.000Z",
   });
 }
@@ -68,6 +70,7 @@ describe("buildProject", () => {
         unitLabel: "units",
       },
       annotations: [],
+      clip: null,
     });
 
     expect(built.model.id).toBe(`${HASH_PREFIX}cd34`);
@@ -226,5 +229,38 @@ describe("parseProject", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toContain("bad measurement");
+  });
+
+  it("round trips an active section cut", () => {
+    const parsed = parseProject(serializeProject(project([], { axis: "y", offset: 0.3 })));
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.clip).toEqual({ axis: "y", offset: 0.3 });
+  });
+
+  it("opens a v2 file with no section cut", () => {
+    const raw = JSON.parse(serializeProject(project()));
+
+    raw.version = 2;
+    delete raw.clip;
+
+    const result = parseProject(JSON.stringify(raw));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.project.clip).toBe(null);
+  });
+
+  it("rejects a project with a bad section cut", () => {
+    const raw = JSON.parse(serializeProject(project([], { axis: "y", offset: 0.3 })));
+
+    raw.clip.axis = "w";
+
+    const result = parseProject(JSON.stringify(raw));
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain("bad section cut");
   });
 });

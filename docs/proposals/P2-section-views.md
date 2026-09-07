@@ -18,6 +18,14 @@ mechanical parts, which is where the willingness to pay lives.
 
 ## Acceptance
 
-- [ ] Slider moves the cut plane live with no reload
-- [ ] Notes stay anchored when the plane moves
-- [ ] Clip state round-trips through project save / load
+- [x] Slider moves the cut plane live with no reload
+- [x] Notes stay anchored when the plane moves
+- [x] Clip state round-trips through project save / load
+
+## Status
+
+Shipped as T12 (global plane + floating bottom-center panel), T13 (project v3).
+`Section` menu button opens the panel (axis buttons, long slider with readout,
+`Clear`, `Done`); closing keeps the cut. `vp check` clean, 43/43 tests pass.
+Manual check still open: drag the cut on `fixtures/part.glb` and confirm the
+PNG export shows the same section.
